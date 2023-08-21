@@ -1,0 +1,40 @@
+meu-projeto/
+├── index.html
+├── scripts/
+│   ├── controllers/
+│   │   ├── app.js
+│   │   └── user.js
+│   ├── models/
+│   │   ├── product.js
+│   │   └── order.js
+│   ├── views/
+│   │   ├── home.js
+│   │   ├── cart.js
+│   │   └── checkout.js
+│   └── utils/
+│       ├── api.js
+│       └── helpers.js
+├── styles/
+│   ├── base/
+│   │   ├── reset.css
+│   │   └── typography.css
+│   ├── layout/
+│   │   ├── header.css
+│   │   ├── footer.css
+│   │   └── grid.css
+│   ├── components/
+│   │   ├── button.css
+│   │   ├── card.css
+│   │   └── modal.css
+│   └── themes/
+│       ├── light.css
+│       └── dark.css
+└── images/
+    ├── icons/
+    │   ├── search.svg
+    │   ├── cart.svg
+    │   └── user.svg
+    ├── logos/
+    │   └── logo.png
+    └── backgrounds/
+        └── banner.jpg
