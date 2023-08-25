@@ -75,10 +75,10 @@ export class ServiceWorker {
 
     /**
      * @method static
-     * @param {string} message 
-     * @param {*} transferables 
+     * @param {*} message
+     * @returns {void}
      */
-    static async postMessage(message, transferables = null) {
-        (await this.worker).postMessage(message, transferables)
+    static async postMessage(message) {
+        (await this.worker).postMessage(message)
     }
 }

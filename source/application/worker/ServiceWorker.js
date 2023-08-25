@@ -17,7 +17,6 @@ self.addEventListener('activate', event => {
 self.addEventListener('message', async event => {
     if (event instanceof ExtendableMessageEvent) {
         const client = await clients.get(event.source.id)
-        console.log(id, client)
         if (client) {
             client.postMessage({title:'resposta do envio'})
         }

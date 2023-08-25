@@ -11,7 +11,7 @@ import { ServiceWorker } from "./utils/ServiceWorker.mjs"
 
 const url = new URL(`${location.origin}/source/application/worker/ServiceWorker.js`)
 ServiceWorker.register(url)
-ServiceWorker.postMessage('teste 2', { o: 'myobj' })
+ServiceWorker.postMessage('teste 2')
 
 ServiceWorker.container.addEventListener('message', event => {
     alert(JSON.stringify(event.data))
