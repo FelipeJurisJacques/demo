@@ -1,11 +1,6 @@
+import { Asynchronous } from "./Asynchronous.mjs"
+
 export class ServiceWorker {
-
-    static support = 'serviceWorker' in navigator
-
-    /**
-     * @var ServiceWorkerContainer
-     */
-    static container
 
     /**
      * @var ServiceWorkerRegistration
@@ -13,26 +8,72 @@ export class ServiceWorker {
     static registration
 
     /**
+     * @var ServiceWorker
+     */
+    static #worker
+
+    /**
+     * @method static
+     * @returns {Promise<ServiceWorker>}
+     */
+    static get worker() {
+        return this.getWorker()
+    }
+
+    /**
+     * @method static
+     * @returns {boolean}
+     */
+    static get support() {
+        return 'serviceWorker' in navigator
+    }
+
+    /**
+     * @method static
+     * @returns {ServiceWorkerContainer}
+     */
+    static get container() {
+        return this.support ? navigator.serviceWorker : undefined
+    }
+
+    /**
+     * @method static
+     * @returns {Promise<ServiceWorker>}
+     */
+    static async getWorker() {
+        if (this.#worker === undefined) {
+            if (this.container === undefined) {
+                throw new Error('ServiceWorker is unsupported')
+            }
+            while (!this.#worker) {
+                if (this.registration === undefined) {
+                    await Asynchronous.wait(1)
+                } else if (this.registration.active) {
+                    this.#worker = this.registration.active
+                } else if (this.registration.installing || this.registration.waiting) {
+                    await Asynchronous.wait(1)
+                } else {
+                    throw new Error('ServiceWorker script is undefined')
+                }
+            }
+        }
+        return this.#worker
+    }
+
+    /**
      * @method static
      * @param {URL|String} url 
-     * @returns {Promise}
+     * @returns {Promise<ServiceWorkerRegistration>}
      */
-    static register(url) {
-        return new Promise(async (resolve, reject) => {
-            if (ServiceWorker.support) {
-                ServiceWorker.registration = await navigator.serviceWorker.register(url)
-                // if (registration.installing) {
-                // } else if (registration.waiting) {
-                if (ServiceWorker.registration.active) {
-                    ServiceWorker.container = ServiceWorker.registration.active
-                }
-                ServiceWorker.registration.onupdatefound = event => {
-                    ServiceWorker.container = event.target.active
-                }
-                resolve(ServiceWorker)
-            } else {
-                reject(new Error('ServiceWorker is unsupported'))
-            }
-        })
+    static async register(url) {
+        if (this.container === undefined) {
+            throw new Error('ServiceWorker is unsupported')
+        }
+        this.registration = await this.container.register(url)
+        return this.registration
+    }
+
+    static async postMessage(message, transferables = null) {
+        (await this.worker).postMessage(message, transferables)
     }
 }

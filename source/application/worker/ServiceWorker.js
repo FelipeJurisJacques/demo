@@ -7,12 +7,12 @@
 
 self.addEventListener('activate', event => {
     const broadcast = new BroadcastChannel('notifications')
-    broadcast.postMessage({title:'teste'})
+    broadcast.postMessage({title:'ativado o sw'})
     broadcast.close()
 })
 
 self.addEventListener('message', event => {
     const broadcast = new BroadcastChannel('notifications')
-    broadcast.postMessage({title:'mensagem recebida'})
+    broadcast.postMessage(JSON.stringify(event))
     broadcast.close()
 })

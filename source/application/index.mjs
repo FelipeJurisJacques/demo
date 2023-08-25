@@ -5,6 +5,8 @@
 
 import { ServiceWorker } from "./utils/ServiceWorker.mjs"
 
+ServiceWorker.postMessage('teste 2', {o:'myobj'})
+
 const url = new URL(`${location.origin}/source/application/worker/ServiceWorker.js`)
 ServiceWorker.register(url).then(sw => {
     console.log(sw)
@@ -16,3 +18,6 @@ const broadcast = new BroadcastChannel('notifications')
 broadcast.addEventListener('message', event => {
     alert(JSON.stringify(event.data))
 })
+// window.addEventListener('message', event => {
+//     alert(JSON.stringify(event.data))
+// })
