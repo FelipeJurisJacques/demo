@@ -4,15 +4,22 @@
 // push: é disparado quando o service worker recebe uma mensagem push do servidor. Esse evento é usado para mostrar uma notificação ao usuário ou atualizar os dados da aplicação em segundo plano.
 // sync: é disparado quando o service worker recebe um sinal de sincronização periódica ou de uma tarefa em segundo plano. Esse evento é usado para enviar ou receber dados do servidor quando há conectividade disponível.
 // message: é disparado quando o service worker recebe uma mensagem simples de outra parte da aplicação, como a janela principal ou outro service worker. Esse evento é usado para comunicar dados entre o service worker e a aplicação.
+// const broadcast = new BroadcastChannel('notifications')
+// broadcast.postMessage(JSON.stringify(event))
+// broadcast.close()
 
 self.addEventListener('activate', event => {
-    const broadcast = new BroadcastChannel('notifications')
-    broadcast.postMessage({title:'ativado o sw'})
-    broadcast.close()
+    // const broadcast = new BroadcastChannel('notifications')
+    // broadcast.postMessage({title:'ativado o sw'})
+    // broadcast.close()
 })
 
-self.addEventListener('message', event => {
-    const broadcast = new BroadcastChannel('notifications')
-    broadcast.postMessage(JSON.stringify(event))
-    broadcast.close()
+self.addEventListener('message', async event => {
+    if (event instanceof ExtendableMessageEvent) {
+        const client = await clients.get(event.source.id)
+        console.log(id, client)
+        if (client) {
+            client.postMessage({title:'resposta do envio'})
+        }
+    }
 })
