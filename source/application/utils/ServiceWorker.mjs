@@ -73,6 +73,11 @@ export class ServiceWorker {
         return this.registration
     }
 
+    /**
+     * @method static
+     * @param {string} message 
+     * @param {*} transferables 
+     */
     static async postMessage(message, transferables = null) {
         (await this.worker).postMessage(message, transferables)
     }
