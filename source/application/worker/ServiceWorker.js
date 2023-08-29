@@ -428,10 +428,17 @@ self.addEventListener('activate', event => {
 })
 
 self.addEventListener('message', async event => {
-    if (event instanceof ExtendableMessageEvent) {
-        const client = await clients.get(event.source.id)
-        if (client) {
-            client.postMessage({title:'resposta do envio'})
-        }
+    // ExtendableMessageEvent
+    const uuid = event.data.uuid
+    const manager = event.data.manager
+    const client = await clients.get(event.source.id)
+    if (client) {
+        client.postMessage({
+            uuid: uuid,
+            manager: manager,
+            payload: {
+                title: 'resposta do envio',
+            },
+        })
     }
 })

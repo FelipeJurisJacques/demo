@@ -7,12 +7,10 @@
 //     alert(JSON.stringify(event.data))
 // })
 
-import { Cryptography } from "./utils/Cryptography.mjs"
+import { Observer } from "./utils/Observer.mjs"
 import { ServiceWorker } from "./utils/ServiceWorker.mjs"
 
 const url = new URL(`${location.origin}/source/application/worker/ServiceWorker.js`)
 ServiceWorker.register(url)
-
-for (let i = 0; i < 50; i++) {
-console.log(Cryptography.uuid())
-}
+ServiceWorker.message.post('teste')
+ServiceWorker.message.subscribe(new Observer())

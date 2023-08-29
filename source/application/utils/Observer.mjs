@@ -1,5 +1,5 @@
 export class Observer {
     notify(data) {
-        console.error('Extends this class')
+        console.error(data)
     }
 }

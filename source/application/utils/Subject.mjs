@@ -1,6 +1,8 @@
 export class Subject {
     #handlers
 
+    constructor() { }
+
     subscribe(observer) {
         if (this.#handlers === undefined) {
             this.#handlers = []

@@ -1,22 +1,31 @@
 import { Subject } from "./Subject.mjs"
 import { Asynchronous } from "./Asynchronous.mjs"
+import { Cryptography } from "./Cryptography.mjs"
 
 class ServiceWorkerMessage extends Subject {
     constructor() {
+        super()
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.addEventListener('message', event => {
-                this.notify(event.data)
+                super.notify(event.data)
             })
         }
     }
 
     /**
      * @param {*} message
-     * @returns {Promise}
+     * @param {string} manager
+     * @returns {Promise<string>}
      */
-    async post(message) {
+    async post(message, manager = 'global') {
+        const uuid = Cryptography.uuid()
         const worker = await ServiceWorker.getWorker()
-        worker.postMessage(message)
+        worker.postMessage({
+            uuid: uuid,
+            manager: manager,
+            payload: message,
+        })
+        return uuid
     }
 }
 
