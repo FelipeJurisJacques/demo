@@ -7,12 +7,12 @@
 //     alert(JSON.stringify(event.data))
 // })
 
+import { Cryptography } from "./utils/Cryptography.mjs"
 import { ServiceWorker } from "./utils/ServiceWorker.mjs"
 
 const url = new URL(`${location.origin}/source/application/worker/ServiceWorker.js`)
 ServiceWorker.register(url)
-ServiceWorker.postMessage('teste 2')
 
-ServiceWorker.container.addEventListener('message', event => {
-    alert(JSON.stringify(event.data))
-})
+for (let i = 0; i < 50; i++) {
+console.log(Cryptography.uuid())
+}

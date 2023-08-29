@@ -1,4 +1,24 @@
+import { Subject } from "./Subject.mjs"
 import { Asynchronous } from "./Asynchronous.mjs"
+
+class ServiceWorkerMessage extends Subject {
+    constructor() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', event => {
+                this.notify(event.data)
+            })
+        }
+    }
+
+    /**
+     * @param {*} message
+     * @returns {Promise}
+     */
+    async post(message) {
+        const worker = await ServiceWorker.getWorker()
+        worker.postMessage(message)
+    }
+}
 
 export class ServiceWorker {
 
@@ -11,6 +31,11 @@ export class ServiceWorker {
      * @var ServiceWorker
      */
     static #worker
+
+    /**
+     * @var ServiceWorkerMessage
+     */
+    static #message
 
     /**
      * @method static
@@ -34,6 +59,17 @@ export class ServiceWorker {
      */
     static get container() {
         return this.support ? navigator.serviceWorker : undefined
+    }
+
+    /**
+     * @method static
+     * @returns {ServiceWorkerMessage}
+     */
+    static get message() {
+        if (this.#message === undefined) {
+            this.#message = new ServiceWorkerMessage()
+        }
+        return this.#message
     }
 
     /**
@@ -71,14 +107,5 @@ export class ServiceWorker {
         }
         this.registration = await this.container.register(url)
         return this.registration
-    }
-
-    /**
-     * @method static
-     * @param {*} message
-     * @returns {void}
-     */
-    static async postMessage(message) {
-        (await this.worker).postMessage(message)
     }
 }
