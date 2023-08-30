@@ -5,9 +5,7 @@ export class DataBase {
     // }
 
     static async #transaction(request) {
-        
-        await ServiceWorker.postMessage(request)
-        
+        return ServiceWorker.message.request(request, 'database', 1)
     }
 
     static read(path) {

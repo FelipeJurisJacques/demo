@@ -1,13 +1,18 @@
 import { Subject } from "./Subject.mjs"
+import { Calendar } from "./Calendar.mjs"
 import { Asynchronous } from "./Asynchronous.mjs"
 import { Cryptography } from "./Cryptography.mjs"
 
 class ServiceWorkerMessage extends Subject {
+    #last
+
     constructor() {
         super()
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.addEventListener('message', event => {
-                super.notify(event.data)
+                const message = event.data
+                this.#last = message
+                super.notify(message)
             })
         }
     }
@@ -17,7 +22,7 @@ class ServiceWorkerMessage extends Subject {
      * @param {string} manager
      * @returns {Promise<string>}
      */
-    async post(message, manager = 'global') {
+    async post(message, manager = '') {
         const uuid = Cryptography.uuid()
         const worker = await ServiceWorker.getWorker()
         worker.postMessage({
@@ -26,6 +31,25 @@ class ServiceWorkerMessage extends Subject {
             payload: message,
         })
         return uuid
+    }
+
+    /**
+     * @param {*} message
+     * @param {string} manager
+     * @param {int} timeout
+     * @returns {Promise}
+     */
+    async request(message, manager = '', timeout = 30) {
+        timeout *= 1000
+        const init = Calendar.timestamp()
+        const uuid = await this.post(message, manager)
+        while ((Calendar.timestamp() - init) < timeout) {
+            await Asynchronous.wait(1)
+            if (this.#last && this.#last.uuid && this.#last.uuid === uuid) {
+                return this.#last
+            }
+        }
+        throw new Error('Timeout')
     }
 }
 

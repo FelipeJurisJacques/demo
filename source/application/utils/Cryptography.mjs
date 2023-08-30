@@ -1,3 +1,5 @@
+import { Calendar } from "./Calendar.mjs"
+
 export class Cryptography {
 
     /**
@@ -5,9 +7,8 @@ export class Cryptography {
      * @returns {string}
      */
     static uuid() {
-        const date = new Date()
         const random = Math.random()
         const value = random.toString()
-        return `${date.getTime()}${value.substring(2)}`
+        return `${Calendar.timestamp()}${value.substring(2)}`
     }
 }
