@@ -22,7 +22,7 @@ export class Subject {
      */
     unsubscribe(observer) {
         if (this.#handlers) {
-            for (let i = 0; i < this.#handlers.length; i++) {
+            for (let i in this.#handlers) {
                 if (this.#handlers[i] === observer) {
                     this.#handlers.splice(i, 1)
                 }
