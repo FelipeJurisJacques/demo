@@ -427,22 +427,18 @@ self.addEventListener('activate', event => {
     // broadcast.close()
 })
 
-const request = async event => {
+self.addEventListener('message', async event => {
     // ExtendableMessageEvent
     const uuid = event.data.uuid ? event.data.uuid : 0
-        const manager = event.data.manager ? event.data.manager : 'global'
-        const client = await clients.get(event.source.id)
-        if (client) {
-            client.postMessage({
-                uuid: uuid,
-                manager: manager,
-                payload: {
-                    title: 'resposta do envio',
-                },
-            })
-        }
-}
-
-self.addEventListener('message', event => {
-    event.respondWith(request)
+    const manager = event.data.manager ? event.data.manager : 'global'
+    const client = await clients.get(event.source.id)
+    if (client) {
+        client.postMessage({
+            uuid: uuid,
+            manager: manager,
+            payload: {
+                title: 'resposta do envio',
+            },
+        })
+    }
 })

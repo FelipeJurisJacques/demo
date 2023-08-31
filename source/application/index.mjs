@@ -12,9 +12,9 @@ import { ServiceWorker } from "./utils/ServiceWorker.mjs"
 const url = new URL(`${location.origin}/source/application/worker/ServiceWorker.js`)
 ServiceWorker.register(url)
 console.log('testando...')
-ServiceWorker.message.request('teste', '', 1).then(response => {
+ServiceWorker.message.request('teste').then(response => {
     console.log(response)
 })
-ServiceWorker.message.request('teste 2', '', 1).then(response => {
+ServiceWorker.message.request('teste 2').then(response => {
     console.log(response)
 })

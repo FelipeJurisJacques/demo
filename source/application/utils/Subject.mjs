@@ -17,6 +17,20 @@ export class Subject {
     }
 
     /**
+     * @param {Observer} observer 
+     * @returns {void}
+     */
+    unsubscribe(observer) {
+        if (this.#handlers) {
+            for (let i = 0; i < this.#handlers.length; i++) {
+                if (this.#handlers[i] === observer) {
+                    this.#handlers.splice(i, 1)
+                }
+            }
+        }
+    }
+
+    /**
      * @param {*} data
      * @returns {void}
      */

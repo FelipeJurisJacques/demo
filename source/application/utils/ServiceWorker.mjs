@@ -1,18 +1,63 @@
 import { Subject } from "./Subject.mjs"
 import { Calendar } from "./Calendar.mjs"
+import { Observer } from "./Observer.mjs"
 import { Asynchronous } from "./Asynchronous.mjs"
 import { Cryptography } from "./Cryptography.mjs"
 
+export class ServiceWorkerMessageObserver extends Observer {
+    uuid
+    manager
+    #message
+
+    constructor() {
+        super()
+    }
+
+    /**
+     * @param {object} data
+     * @returns {void}
+     */
+    notify(data) {
+        if (
+            data.uuid
+            && data.uuid === this.uuid
+            && (
+                !this.manager
+                || (
+                    data.manager
+                    && data.manager === this.manager
+                )
+            )
+        ) {
+            this.#message = data
+        }
+    }
+
+    /**
+     * @param {int} timeout
+     * @returns {Promise}
+     */
+    async wait(timeout = 1000) {
+        timeout += Calendar.timestamp()
+        let moment = 0
+        while (moment < timeout) {
+            if (this.#message) {
+                return this.#message
+            }
+            await Asynchronous.wait(1)
+            moment = Calendar.timestamp()
+        }
+        throw new Error('Timeout')
+    }
+}
+
 class ServiceWorkerMessage extends Subject {
-    #last
 
     constructor() {
         super()
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.addEventListener('message', event => {
-                const message = event.data
-                this.#last = message
-                super.notify(message)
+                super.notify(event.data)
             })
         }
     }
@@ -39,17 +84,25 @@ class ServiceWorkerMessage extends Subject {
      * @param {int} timeout
      * @returns {Promise}
      */
-    async request(message, manager = '', timeout = 30) {
-        timeout *= 1000
-        const init = Calendar.timestamp()
-        const uuid = await this.post(message, manager)
-        while ((Calendar.timestamp() - init) < timeout) {
-            await Asynchronous.wait(1)
-            if (this.#last && this.#last.uuid && this.#last.uuid === uuid) {
-                return this.#last
-            }
+    async request(message, manager = '', timeout = 1000) {
+        const uuid = Cryptography.uuid()
+        const observer = new ServiceWorkerMessageObserver()
+        observer.uuid = uuid
+        this.subscribe(observer)
+        const worker = await ServiceWorker.getWorker()
+        worker.postMessage({
+            uuid: uuid,
+            manager: manager,
+            payload: message,
+        })
+        try {
+            const data = await observer.wait(timeout)
+            this.unsubscribe(observer)
+            return data
+        } catch (error) {
+            this.unsubscribe(observer)
+            throw error
         }
-        throw new Error('Timeout')
     }
 }
 
