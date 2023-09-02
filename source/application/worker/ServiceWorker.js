@@ -8,76 +8,8 @@
 // broadcast.postMessage(JSON.stringify(event))
 // broadcast.close()
 
-class IndexedDbTablesRepository {
+class IndexedDbRepository {
     constructor() {
-        this.name = 'ASFAR'
-        this.version = 1
-    }
-
-    onUpgrade(upgrade) {
-        let db = upgrade.target.result
-        let objectStore = undefined
-
-        if (!db.objectStoreNames.contains('cliente')) {
-            objectStore = db.createObjectStore('cliente', {
-                keyPath: "id",
-                autoIncrement: true
-            })
-            objectStore.createIndex("nome", "nome", { unique: false })
-        }
-
-        if (!db.objectStoreNames.contains('talhao')) {
-            objectStore = db.createObjectStore('talhao', {
-                keyPath: "id",
-                autoIncrement: true
-            })
-            objectStore.createIndex("clienteId", "clienteId", { unique: false })
-        }
-
-        if (!db.objectStoreNames.contains('analiseSolo')) {
-            objectStore = db.createObjectStore('analiseSolo', {
-                keyPath: "id",
-                autoIncrement: true
-            })
-            objectStore.createIndex("talhaoId", "talhaoId", { unique: false })
-        }
-
-        if (!db.objectStoreNames.contains('laudoSolo')) {
-            objectStore = db.createObjectStore('laudoSolo', {
-                keyPath: "id",
-                autoIncrement: true
-            })
-            objectStore.createIndex("analiseSoloId", "analiseSoloId", { unique: false })
-        }
-
-        if (!db.objectStoreNames.contains('configuracao')) {
-            objectStore = db.createObjectStore('configuracao', {
-                keyPath: "id",
-                autoIncrement: true
-            })
-        }
-
-        if (!db.objectStoreNames.contains('acidezSolo')) {
-            objectStore = db.createObjectStore('acidezSolo', {
-                keyPath: "id",
-                autoIncrement: true
-            })
-            objectStore.createIndex("configuracaoId", "configuracaoId", { unique: false })
-        }
-
-        if (!db.objectStoreNames.contains('fertilidadeSolo')) {
-            objectStore = db.createObjectStore('fertilidadeSolo', {
-                keyPath: "id",
-                autoIncrement: true
-            })
-            objectStore.createIndex("configuracaoId", "configuracaoId", { unique: false })
-        }
-    }
-}
-
-class IndexedDbRepository extends IndexedDbTablesRepository {
-    constructor() {
-        super()
         this.opened = false
         this.database = undefined
         this.transaction = undefined
@@ -87,8 +19,7 @@ class IndexedDbRepository extends IndexedDbTablesRepository {
         return new Promise((resolve, reject) => {
             if (this.opened) {
                 resolve(false)
-            }
-            else {
+            } else {
                 if (indexedDB) {
                     this.database = indexedDB.open(this.name, this.version)
                     this.database.onerror = () => {
@@ -101,8 +32,7 @@ class IndexedDbRepository extends IndexedDbTablesRepository {
                         this.opened = true
                         resolve(true)
                     }
-                }
-                else {
+                } else {
                     reject(false)
                 }
             }
@@ -420,6 +350,108 @@ class IndexedDbRepository extends IndexedDbTablesRepository {
     }
 }
 
+class IndexedDataBase {
+    #name
+    #database
+
+    /**
+     * @method static
+     * @returns {IDBFactory}
+     */
+    get indexedDB() {
+        if (indexedDB) {
+            return indexedDB
+        } else {
+            reject(new Error('Unsupported IndexedDB'))
+        }
+    }
+
+    constructor(name) {
+        this.#name = name
+    }
+
+    static get name() {
+        return this.#name
+    }
+
+    open() {
+        return new Promise((resolve, reject) => {
+            this.#database = this.indexedDB.open(this.#name)
+            this.#database.onerror = () => {
+                reject(new Error('Fail to open'))
+            }
+            this.#database.onsuccess = () => {
+                resolve()
+            }
+        })
+    }
+
+    install(upgrade, version) {
+        return new Promise((resolve, reject) => {
+            this.#database = this.indexedDB.open(this.#name, version)
+            this.#database.onupgradeneeded = upgrade => { }
+            this.#database.onerror = () => {
+                reject(new Error('Fail to open'))
+            }
+            this.#database.onsuccess = () => {
+                resolve()
+            }
+        })
+    }
+}
+
+class IndexedDataBaseConnections {
+    static #connections
+
+    /**
+     * @param {IndexedDataBase} connection
+     * @requires {IndexedDataBase}
+     */
+    static push(connection) {
+        if (!this.#connections) {
+            this.#connections = []
+        }
+        this.#connections.push(connection)
+        return connection
+    }
+
+    /**
+     * @param {string} name
+     * @returns {IndexedDataBase|null}
+     */
+    static from(name) {
+        if (this.#connections) {
+            for (let connection of this.#connections) {
+                if (connection.name === name) {
+                    return connection
+                }
+            }
+        }
+        return null
+    }
+}
+
+class IndexedDataBaseController {
+    static async handler(data) {
+        if (!data.database) {
+            throw new Error('Database name is required')
+        }
+        let connection = IndexedDataBaseConnections.from(data.database)
+        if (!connection) {
+            if (!data.upgrade || !data.version) {
+                throw new Error('Version and upgrade is required')
+            }
+            connection = new IndexedDataBase(data.database)
+            IndexedDataBaseConnections.push(connection)
+        }
+        if (data.upgrade && data.version) {
+            await connection.install(data.upgrade, data.version)
+        } else {
+            await connection.open()
+        }
+        return {}
+    }
+}
 
 self.addEventListener('activate', event => {
     // const broadcast = new BroadcastChannel('notifications')
@@ -431,14 +463,27 @@ self.addEventListener('message', async event => {
     // ExtendableMessageEvent
     const uuid = event.data.uuid ? event.data.uuid : 0
     const manager = event.data.manager ? event.data.manager : 'global'
+    const payload = event.data.payload ? event.data.payload : {}
     const client = await clients.get(event.source.id)
     if (client) {
-        client.postMessage({
+        const response = {
             uuid: uuid,
             manager: manager,
-            payload: {
-                title: 'resposta do envio',
-            },
-        })
+            payload: null,
+        }
+        try {
+            switch (manager) {
+                case 'database':
+                    response.payload = await IndexedDataBaseController.handler(payload)
+                    break
+                default:
+                    break
+            }
+        } catch (error) {
+            response.payload = {
+                error: `${error.message} in ${error.stack}`,
+            }
+        }
+        client.postMessage(response)
     }
 })

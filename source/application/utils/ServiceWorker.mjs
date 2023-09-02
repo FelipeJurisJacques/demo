@@ -97,6 +97,9 @@ class ServiceWorkerMessage extends Subject {
         })
         try {
             const data = await observer.wait(timeout)
+            if (data.payload && data.payload.error) {
+                throw new Error(data.payload.error)
+            }
             this.unsubscribe(observer)
             return data
         } catch (error) {
