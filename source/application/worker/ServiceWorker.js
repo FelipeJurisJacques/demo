@@ -389,7 +389,31 @@ class IndexedDataBase {
     install(upgrade, version) {
         return new Promise((resolve, reject) => {
             this.#database = this.indexedDB.open(this.#name, version)
-            this.#database.onupgradeneeded = upgrade => { }
+            this.#database.onupgradeneeded = event => {
+                const database = event.target.result
+                if (upgrade.stores) {
+                    let storage
+                    for (let store of upgrade.stores) {
+                        if (database.objectStoreNames.contains(store.name)) {
+                            continue
+                        }
+                        if (store.options) {
+                            storage = database.createObjectStore(store.name, store.options)
+                        } else {
+                            storage = database.createObjectStore(store.name)
+                        }
+                        if (store.indexes) {
+                            for (let index of store.indexes) {
+                                if (index.options) {
+                                    storage.createIndex(index.name, index.name, index.options)
+                                } else {
+                                    storage.createIndex(index.name, index.name)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             this.#database.onerror = () => {
                 reject(new Error('Fail to open'))
             }

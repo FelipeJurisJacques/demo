@@ -3,7 +3,25 @@ export class DataBase {
         return {
             database: {
                 version: 1,
-                upgrade: {}
+                upgrade: {
+                    stores: [
+                        {
+                            name: 'tabela_teste',
+                            options: {
+                                keyPath: 'id',
+                                autoIncrement: true,
+                            },
+                            indexes: [
+                                {
+                                    name: 'indice',
+                                    options: {
+                                        unique: false,
+                                    }
+                                }
+                            ],
+                        },
+                    ],
+                }
             }
         }
     }
