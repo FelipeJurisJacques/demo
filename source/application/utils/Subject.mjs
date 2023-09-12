@@ -34,7 +34,7 @@ export class Subject {
      * @param {*} data
      * @returns {void}
      */
-    notify(data) {
+    notify(data = null) {
         if (this.#handlers) {
             for (let handler of this.#handlers) {
                 handler.notify(data)

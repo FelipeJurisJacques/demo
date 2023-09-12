@@ -2,6 +2,11 @@ import { Observer } from "./Observer.mjs"
 
 export class Asynchronous extends Observer {
     #payload
+    #received
+
+    constructor() {
+        this.#received = false
+    }
 
     static wait(ms) {
         return new Promise(resolve => {
@@ -13,10 +18,17 @@ export class Asynchronous extends Observer {
 
     async observe(timeout = -1) {
         for (let i = 1; timeout > 0 && i < timeout; i++) {
-            if (this.#payload === undefined) {
-                await this.wait(1)
-            } else {
+            if (this.#received) {
+                if (
+                    this.#payload
+                    && typeof this.#payload === 'object'
+                    && this.#payload instanceof Error
+                ) {
+                    throw this.#payload
+                }
                 return this.#payload
+            } else {
+                await this.wait(1)
             }
         }
         throw new Error('Timeout');
@@ -24,5 +36,6 @@ export class Asynchronous extends Observer {
 
     notify(data) {
         this.#payload = data
+        this.#received = true
     }
 }

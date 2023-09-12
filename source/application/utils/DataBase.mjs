@@ -1,357 +1,23 @@
-import { ServiceWorker } from "./ServiceWorker.mjs";
-import { DataBase as Kernel } from "../kernels/DataBase.mjs";
 import { Asynchronous } from "./Asynchronous.mjs";
+import { ServiceWorker } from "./ServiceWorker.mjs";
+import { Subject, Observer } from "./Observer.mjs";
+import { DataBase as Kernel } from "../kernels/DataBase.mjs";
 
-class IndexedDbRepository {
-    constructor() {
-        this.opened = false
-        this.database = undefined
-        this.transaction = undefined
-    }
+class IndexedDataBaseConnection extends Observer {
 
-    get open() {
-        return new Promise((resolve, reject) => {
-            if (this.opened) {
-                resolve(false)
-            } else {
-                if (indexedDB) {
-                    this.database = indexedDB.open(this.name, this.version)
-                    this.database.onerror = () => {
-                        reject(false)
-                    }
-                    this.database.onupgradeneeded = (upgrade) => {
-                        this.onUpgrade(upgrade)
-                    }
-                    this.database.onsuccess = () => {
-                        this.opened = true
-                        resolve(true)
-                    }
-                } else {
-                    reject(false)
-                }
-            }
-        })
-    }
-
-    close() {
-        if (this.opened) {
-            this.database.result.close()
-            this.opened = false
-            return true
-        }
-        return false
-    }
-
-    get dropDataBase() {
-        return new Promise((resolve, reject) => {
-            if (indexedDB) {
-                this.database = indexedDB.deleteDatabase(this.name)
-                this.database.onerror = () => {
-                    reject(false)
-                }
-                this.database.onsuccess = () => {
-                    this.opened = false
-                    resolve(true)
-                }
-            }
-            else {
-                reject(false)
-            }
-        })
-    }
-
-    set setTransaction(tables) {
-        if (this.opened) {
-            if (typeof tables == 'object') {
-                if (Array.isArray(tables)) {
-                    this.transaction = this.database.result.transaction(tables, "readwrite")
-                    return true
-                }
-            }
-        }
-        return false
-    }
-
-    get getTransactionComplete() {
-        return new Promise((resolve, reject) => {
-            if (this.transaction) {
-                this.transaction.onerror = () => {
-                    this.transaction = undefined
-                    resolve(false)
-                }
-                this.transaction.oncomplete = () => {
-                    this.transaction = undefined
-                    resolve(true)
-                }
-                this.transaction.onabort = () => {
-                    this.transaction = undefined
-                    resolve(false)
-                }
-            }
-            else {
-                resolve(false)
-            }
-        })
-    }
-
-    objectStoreAdd(table, obj) {
-        return new Promise((resolve, reject) => {
-            if (typeof table == 'string' && typeof obj == 'object') {
-                if (this.transaction) {
-                    const request = this.transaction.objectStore(table).add(obj)
-                    request.onerror = () => {
-                        reject(null)
-                    }
-                    request.onsuccess = () => {
-                        resolve(request.result)
-                    }
-                }
-                else {
-                    reject(null)
-                }
-            }
-            else {
-                reject(null)
-            }
-        })
-    }
-
-    objectStoreGet(table, id) {
-        return new Promise((resolve, reject) => {
-            if (typeof table == 'string' && !isNaN(id)) {
-                if (this.transaction) {
-                    const request = this.transaction.objectStore(table).get(id)
-                    request.onerror = () => {
-                        reject(null)
-                    }
-                    request.onsuccess = () => {
-                        if (request.result) {
-                            resolve(request.result)
-                        }
-                        reject(null)
-                    }
-                }
-                else {
-                    reject(null)
-                }
-            }
-            else {
-                reject(null)
-            }
-        })
-    }
-
-    objectStoreCursor(table) {
-        return new Promise((resolve, reject) => {
-            let r = new Array()
-            if (typeof table == 'string') {
-                if (this.transaction) {
-                    const request = this.transaction.objectStore(table).openCursor()
-                    request.onerror = () => {
-                        reject(r)
-                    }
-                    request.onsuccess = () => {
-                        if (request.result) {
-                            r.push(request.result.value)
-                            request.result.continue()
-                        }
-                        else {
-                            if (r.length > 0) {
-                                resolve(r)
-                            }
-                            else {
-                                resolve(r)
-                            }
-                        }
-                    }
-                }
-                else {
-                    reject(r)
-                }
-            }
-            else {
-                reject(r)
-            }
-        })
-    }
-
-    objectStoreIndex(table, column, value) {
-        return new Promise((resolve, reject) => {
-            let r = new Array()
-            if (typeof table == 'string' && typeof column == 'string') {
-                if (this.transaction) {
-                    let request
-                    try {
-                        request = this.transaction.objectStore(table).index(column).openCursor(value)
-                    }
-                    catch {
-                        reject(r)
-                    }
-                    request.onerror = () => {
-                        reject(r)
-                    }
-                    request.onsuccess = () => {
-                        if (request.result) {
-                            r.push(request.result.value)
-                            request.result.continue()
-                        }
-                        else {
-                            if (r.length > 0) {
-                                resolve(r)
-                            }
-                            else {
-                                resolve(r)
-                            }
-                        }
-                    }
-                }
-                else {
-                    reject(r)
-                }
-            }
-            else {
-                reject(r)
-            }
-        })
-    }
-
-    objectStorePut(table, obj) {
-        return new Promise((resolve, reject) => {
-            if (typeof table == 'string' && typeof obj == 'object') {
-                if (!isNaN(obj.id)) {
-                    if (this.transaction) {
-                        const request = this.transaction.objectStore(table).put(obj)
-                        request.onerror = () => {
-                            reject(false)
-                        }
-                        request.onsuccess = () => {
-                            resolve(true)
-                        }
-                    }
-                    else {
-                        reject(false)
-                    }
-                }
-                else {
-                    reject(false)
-                }
-            }
-            else {
-                reject(false)
-            }
-        })
-    }
-
-    objectStoreDelete(table, id) {
-        return new Promise((resolve, reject) => {
-            if (typeof table == 'string' && !isNaN(id)) {
-                if (this.transaction) {
-                    const request = this.transaction.objectStore(table).delete(id)
-                    request.onerror = () => {
-                        reject(false)
-                    }
-                    request.onsuccess = () => {
-                        resolve(true)
-                    }
-                }
-                else {
-                    reject(false)
-                }
-            }
-            else {
-                reject(false)
-            }
-        })
-    }
-
-    objectStoreEmpty(table) {
-        return new Promise((resolve, reject) => {
-            if (typeof table == 'string') {
-                if (this.transaction) {
-                    let request = this.transaction.objectStore(table).openCursor()
-                    request.onerror = () => {
-                        reject(null)
-                    }
-                    request.onsuccess = () => {
-                        if (request.result) {
-                            resolve(false)
-                        }
-                        else {
-                            resolve(true)
-                        }
-                    }
-                }
-                else {
-                    reject(null)
-                }
-            }
-            else {
-                reject(null)
-            }
-        })
-    }
-
-    objectStoreIndexEmpty(table, column, parentId) {
-        return new Promise((resolve, reject) => {
-            if (typeof table == 'string' && typeof column == 'string' && !isNaN(parentId)) {
-                if (this.transaction) {
-                    const request = this.transaction.objectStore(table).index(column).openCursor(parentId)
-                    request.onerror = () => {
-                        reject(null)
-                    }
-                    request.onsuccess = () => {
-                        if (request.result) {
-                            resolve(false)
-                        }
-                        else {
-                            resolve(true)
-                        }
-                    }
-                }
-                else {
-                    reject(null)
-                }
-            }
-            else {
-                reject(null)
-            }
-        })
-    }
-
-    objectStoreHas(table, id) {
-        return new Promise((resolve, reject) => {
-            if (typeof table == 'string' && !isNaN(id)) {
-                if (this.transaction) {
-                    const request = this.transaction.objectStore(table).get(id)
-                    request.onerror = () => {
-                        reject(null)
-                    }
-                    request.onsuccess = () => {
-                        if (request.result) {
-                            resolve(true)
-                        }
-                        resolve(false)
-                    }
-                }
-                else {
-                    reject(null)
-                }
-            }
-            else {
-                reject(null)
-            }
-        })
-    }
-}
-
-class IndexedDataBaseConnection {
+    /**
+     * @var {string}
+     */
     #name
 
     /**
-     * @var IDBDatabase
+     * @var {IDBDatabase}
      */
     #database
 
+    /**
+     * @var {IDBTransaction}
+     */
     #transaction
 
     /**
@@ -470,13 +136,25 @@ class IndexedDataBaseConnection {
         return this.#transaction
     }
 
+    notify(data) {
+        this.#transaction = null
+    }
 }
 
-class IndexedDataBaseTransaction {
+class IndexedDataBaseTransaction extends Subject {
     #transaction
 
     constructor(transaction) {
         this.#transaction = transaction
+        this.#transaction.onerror = () => {
+            this.notify(new Error('Transaction error'))
+        }
+        this.#transaction.onabort = () => {
+            this.notify(new Error('Transaction is aborted'))
+        }
+        this.#transaction.oncomplete = () => {
+            this.notify()
+        }
     }
 
     objectStore(table) {
@@ -484,31 +162,16 @@ class IndexedDataBaseTransaction {
     }
 
     complete() {
-        return new Promise((resolve, reject) => {
-            if (this.#transaction) {
-                this.transaction.onerror = () => {
-                    this.transaction = null
-                    reject(new Error('Transaction error'))
-                }
-                this.transaction.onabort = () => {
-                    this.transaction = null
-                    reject(new Error('Transaction is aborted'))
-                }
-                this.transaction.oncomplete = () => {
-                    this.transaction = null
-                    resolve()
-                }
-            } else {
-                resolve()
-            }
-        })
+        const observer = new Asynchronous();
+        this.subscribe(observer)
+        return observer.observe(1000)
     }
 }
 
 class IndexedDataBaseObjectStore {
 
     /**
-     * @var IDBObjectStore
+     * @var {IDBObjectStore}
      */
     #storage
 
@@ -614,7 +277,7 @@ class IndexedDataBaseObjectStore {
 class IndexedDataBaseObjectStoreIndex {
 
     /**
-     * @var IDBIndex
+     * @var {IDBIndex}
      */
     #index
 
