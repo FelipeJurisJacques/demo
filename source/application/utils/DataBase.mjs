@@ -1,6 +1,7 @@
+import { Subject } from "./Subject.mjs";
+import { Observer } from "./Observer.mjs";
 import { Asynchronous } from "./Asynchronous.mjs";
 import { ServiceWorker } from "./ServiceWorker.mjs";
-import { Subject, Observer } from "./Observer.mjs";
 import { DataBase as Kernel } from "../kernels/DataBase.mjs";
 
 class IndexedDataBaseConnection extends Observer {
@@ -11,14 +12,19 @@ class IndexedDataBaseConnection extends Observer {
     #name
 
     /**
+     * @var {boolean}
+     */
+    #open
+
+    /**
      * @var {IDBDatabase}
      */
     #database
 
     /**
-     * @var {IDBTransaction}
+     * @var {Array<IDBTransaction>}
      */
-    #transaction
+    #transactions
 
     /**
      * @method static
@@ -33,23 +39,51 @@ class IndexedDataBaseConnection extends Observer {
     }
 
     constructor(name) {
+        super()
         this.#name = name
+        this.#open = false
+        this.#transactions = []
     }
 
-    static get name() {
+    get name() {
         return this.#name
     }
 
-    open() {
-        return new Promise((resolve, reject) => {
-            // IDBOpenDBRequest
-            const open = this.indexedDB.open(this.#name)
-            open.onerror = () => {
-                reject(new Error('Fail to open'))
+    async version() {
+        if (this.#database) {
+            return this.#database.version
+        }
+        const databases = await this.indexedDB.databases()
+        for (let database of databases) {
+            if (this.#name === database.name) {
+                return database.version
             }
-            open.onsuccess = () => {
-                this.#database = open.result
-                resolve()
+        }
+        reject(new Error('Database not found'))
+    }
+
+    open() {
+        return new Promise(async (resolve, reject) => {
+            let open = null
+            // IDBOpenDBRequest
+            const databases = await this.indexedDB.databases()
+            for (let database of databases) {
+                if (this.#name === database.name) {
+                    open = this.indexedDB.open(this.#name)
+                    break
+                }
+            }
+            if (open) {
+                open.onerror = () => {
+                    reject(new Error('Fail to open'))
+                }
+                open.onsuccess = () => {
+                    this.#database = open.result
+                    this.#open = true
+                    resolve()
+                }
+            } else {
+                reject(new Error('Database not found'))
             }
         })
     }
@@ -88,26 +122,21 @@ class IndexedDataBaseConnection extends Observer {
             }
             open.onsuccess = () => {
                 this.#database = open.result
+                this.#open = true
                 resolve()
             }
         })
     }
 
-    async close() {
-        if (this.#database) {
-            while (this.#transaction) {
-                await Asynchronous.wait(10)
-            }
+    close() {
+        if (this.#open && this.#database) {
             this.#database.close()
-            this.#database = null
+            this.#open = false
         }
     }
 
     drop() {
         return new Promise(async (resolve, reject) => {
-            while (this.#transaction) {
-                await Asynchronous.wait(10)
-            }
             // IDBOpenDBRequest
             const open = this.indexedDB.deleteDatabase(this.name)
             open.onerror = () => {
@@ -122,29 +151,30 @@ class IndexedDataBaseConnection extends Observer {
     /**
      * @param {Array} tables
      * @param {boolean} write
-     * @returns {Promise}
+     * @returns {Promise<IndexedDataBaseTransaction>}
      */
     async transaction(tables, write = true) {
-        if (!this.#database) {
+        if (!this.open || !this.#database) {
             await this.open()
         }
-        while (this.#transaction) {
-            await Asynchronous.wait(10)
-        }
+        // while (this.#transaction) {
+        //     await Asynchronous.wait(10)
+        // }
         const transaction = this.#database.transaction(tables, write ? 'readwrite' : 'readonly')
-        this.#transaction = new IndexedDataBaseTransaction(transaction)
-        return this.#transaction
+        const instance = new IndexedDataBaseTransaction(transaction)
+        this.#transactions.push(instance)
+        // this.#transaction.subscribe(this)
+        return instance
     }
 
-    notify(data) {
-        this.#transaction = null
-    }
+    notify(data) { }
 }
 
 class IndexedDataBaseTransaction extends Subject {
     #transaction
 
     constructor(transaction) {
+        super()
         this.#transaction = transaction
         this.#transaction.onerror = () => {
             this.notify(new Error('Transaction error'))
@@ -157,7 +187,12 @@ class IndexedDataBaseTransaction extends Subject {
         }
     }
 
-    objectStore(table) {
+    /**
+     * 
+     * @param {string} table 
+     * @returns {IndexedDataBaseObjectStore}
+     */
+    storage(table) {
         return new IndexedDataBaseObjectStore(this.#transaction.objectStore(table))
     }
 
@@ -183,6 +218,10 @@ class IndexedDataBaseObjectStore {
         return new IndexedDataBaseObjectStoreIndex(this.#storage.index(key))
     }
 
+    /**
+     * @param {object} data 
+     * @returns {Promise<int>}
+     */
     add(data) {
         return new Promise((resolve, reject) => {
             const request = this.#storage.add(data)
@@ -195,6 +234,10 @@ class IndexedDataBaseObjectStore {
         })
     }
 
+    /**
+     * @param {number} id 
+     * @returns {Promise<object>}
+     */
     get(id) {
         return new Promise((resolve, reject) => {
             const request = this.#storage.get(id)
@@ -347,28 +390,6 @@ class IndexedDataBaseConnections {
     }
 }
 
-class IndexedDataBase {
-    static async #connection(name, version, upgrade) {
-        if (!data.database) {
-            throw new Error('Database name is required')
-        }
-        let connection = IndexedDataBaseConnections.from(data.database)
-        if (!connection) {
-            if (!data.upgrade || !data.version) {
-                throw new Error('Version and upgrade is required')
-            }
-            connection = new IndexedDataBase(data.database)
-            IndexedDataBaseConnections.push(connection)
-        }
-        if (data.upgrade && data.version) {
-            await connection.install(data.upgrade, data.version)
-        } else {
-            await connection.open()
-        }
-        return {}
-    }
-}
-
 // class IndexedDbTablesRepository {
 //     constructor() {
 //         this.name = 'ASFAR'
@@ -436,35 +457,42 @@ class IndexedDataBase {
 //     }
 // }
 
+let connection
+for (let name in Kernel.versions) {
+    connection = new IndexedDataBaseConnection(name)
+    IndexedDataBaseConnections.push(connection)
+    connection.install(Kernel.versions[name].upgrade, Kernel.versions[name].version)
+}
+
 export class DataBase {
-    #name
+    /**
+     * @var {IndexedDataBaseConnection}
+     */
+    #connection
 
     constructor(name = 'database') {
-        this.#name = name
-    }
-
-    async #transaction(request) {
-        request.database = this.#name
-        const response = await ServiceWorker.message.request(request, 'database', 1000)
-        return response.payload
-    }
-
-    async #install() {
-        for (let name in Kernel.versions) {
-            if (name === this.#name) {
-                const migrate = Kernel.versions[name]
-                const request = {
-                    upgrade: migrate.upgrade,
-                    version: migrate.version,
-                }
-                await this.#transaction(request)
-                return
-            }
+        const connection = IndexedDataBaseConnections.from(name)
+        if (!connection) {
+            throw new Error('Database not found')
         }
-        throw new Error(`Database ${this.#name} does not exist`)
+        this.#connection = connection
     }
 
-    async insert(data) {
-        this.#install()
+    // async #transaction(request) {
+    //     request.database = this.#name
+    //     const response = await ServiceWorker.message.request(request, 'database', 1000)
+    //     return response.payload
+    // }
+
+    storage(tables, write = true) {
+        return this.#connection.transaction(tables, write)
+    }
+
+    drop(table) {
+        this.#connection.drop()
+    }
+
+    close() {
+        this.#connection.close()
     }
 }
