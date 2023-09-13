@@ -22,6 +22,28 @@ export class DataBase {
                         },
                     ],
                 }
+            },
+            key_value: {
+                version: 1,
+                upgrade: {
+                    stores: [
+                        {
+                            name: 'values',
+                            options: {
+                                keyPath: 'id',
+                                autoIncrement: true,
+                            },
+                            indexes: [
+                                {
+                                    name: 'key',
+                                    options: {
+                                        unique: true,
+                                    }
+                                }
+                            ],
+                        },
+                    ],
+                }
             }
         }
     }

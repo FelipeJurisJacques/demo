@@ -1,5 +1,3 @@
-import { Subject } from "./Subject.mjs";
-import { Observer } from "./Observer.mjs";
 import { Asynchronous } from "./Asynchronous.mjs";
 import { ServiceWorker } from "./ServiceWorker.mjs";
 import { DataBase as Kernel } from "../kernels/DataBase.mjs";
@@ -147,8 +145,8 @@ class IndexedDataBaseConnection {
                     }
                 }
             }
-            open.onerror = () => {
-                reject(new Error('Fail to open'))
+            open.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Fail to open'))
             }
             open.onsuccess = () => {
                 this.#database = open.result
@@ -169,8 +167,8 @@ class IndexedDataBaseConnection {
         return new Promise(async (resolve, reject) => {
             // IDBOpenDBRequest
             const open = this.indexedDB.deleteDatabase(this.name)
-            open.onerror = () => {
-                reject(new Error(`Error to drop database ${this.name}`))
+            open.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error(`Error to drop database ${this.name}`))
             }
             open.onsuccess = () => {
                 resolve()
@@ -179,12 +177,12 @@ class IndexedDataBaseConnection {
     }
 
     /**
-     * @param {Array} tables
+     * @param {string|Array<string>} tables
      * @param {boolean} write
      * @returns {IndexedDataBaseTransaction}
      */
     transaction(tables, write = true) {
-        if (!this.open || !this.#database) {
+        if (!this.isOpen()) {
             throw new Error('The database connection is closing')
         }
         const transaction = this.#database.transaction(tables, write ? 'readwrite' : 'readonly')
@@ -226,15 +224,11 @@ class IndexedDataBaseTransaction {
         this.#connection = connection
         this.#transaction = transaction
         this.#transaction.onerror = event => {
-            if (!this.error) {
-                this.#error = new Error('Transaction error')
-            }
+            this.#error = event.target.error ? event.target.error : new Error('Transaction error')
             this.#unset()
         }
         this.#transaction.onabort = event => {
-            if (!this.error) {
-                this.#error = new Error('Transaction is aborted')
-            }
+            this.#error = event.target.error ? event.target.error : new Error('Transaction is aborted')
             this.#unset()
         }
         this.#transaction.oncomplete = event => {
@@ -296,6 +290,9 @@ class IndexedDataBaseTransaction {
                 }
             }
         }
+        // if (this.error) {
+        //     console.error(this.error)
+        // }
     }
 }
 
@@ -306,12 +303,21 @@ class IndexedDataBaseObjectStore {
      */
     #storage
 
+    /**
+     * @param {IDBObjectStore} storage
+     */
     constructor(storage) {
         this.#storage = storage
     }
 
+    /**
+     * @throws {DOMException}
+     * @param {string} key
+     * @returns {IndexedDataBaseObjectStoreIndex}
+     */
     index(key) {
-        return new IndexedDataBaseObjectStoreIndex(this.#storage.index(key))
+        const index = this.#storage.index(key)
+        return new IndexedDataBaseObjectStoreIndex(index)
     }
 
     /**
@@ -321,10 +327,11 @@ class IndexedDataBaseObjectStore {
     add(data) {
         return new Promise((resolve, reject) => {
             const request = this.#storage.add(data)
-            request.onerror = () => {
-                reject(new Error('Error to insert data'))
+            request.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Error to insert data'))
             }
-            request.onsuccess = () => {
+            request.onsuccess = event => {
+                console.log(event)
                 resolve(request.result)
             }
         })
@@ -337,8 +344,8 @@ class IndexedDataBaseObjectStore {
     get(id) {
         return new Promise((resolve, reject) => {
             const request = this.#storage.get(id)
-            request.onerror = () => {
-                reject(new Error('Error to get'))
+            request.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Error to get'))
             }
             request.onsuccess = () => {
                 resolve(request.result ? request.result : null)
@@ -346,41 +353,65 @@ class IndexedDataBaseObjectStore {
         })
     }
 
-    cursor() {
+    /**
+     * @returns {Promise<Array<Object>>}
+     */
+    all() {
         return new Promise((resolve, reject) => {
-            const result = []
-            const request = this.#storage.openCursor()
-            request.onerror = () => {
-                reject(new Error('Error to open cursor'))
+            const request = this.#storage.getAll()
+            request.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Error to get all'))
             }
             request.onsuccess = () => {
-                if (request.result) {
-                    result.push(request.result.value)
-                    request.result.continue()
-                } else {
-                    resolve(result)
-                }
+                resolve(request.result ? request.result : null)
             }
         })
     }
 
-    put(data) {
+    // cursor() {
+    //     return new Promise((resolve, reject) => {
+    //         const result = []
+    //         const request = this.#storage.openCursor()
+    //         request.onerror = () => {
+    //             reject(new Error('Error to open cursor'))
+    //         }
+    //         request.onsuccess = () => {
+    //             if (request.result) {
+    //                 result.push(request.result.value)
+    //                 request.result.continue()
+    //             } else {
+    //                 resolve(result)
+    //             }
+    //         }
+    //     })
+    // }
+
+    /**
+     * @param {object} data 
+     * @param {number} id 
+     * @returns {Promise<number>}
+     */
+    put(data, id = 0) {
         return new Promise((resolve, reject) => {
-            const request = this.#storage.put(data)
-            request.onerror = () => {
-                reject(new Error('Errot to put'))
+            const request = id > 0 ?  this.#storage.put(data, id) : this.#storage.put(data)
+            request.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Error to put'))
             }
-            request.onsuccess = () => {
-                resolve()
+            request.onsuccess = event => {
+                resolve(event.target.result)
             }
         })
     }
 
+    /**
+     * @param {number} id 
+     * @returns {Promise}
+     */
     delete(id) {
         return new Promise((resolve, reject) => {
             const request = this.#storage.delete(id)
-            request.onerror = () => {
-                reject(new Error('Error to delete'))
+            request.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Error to delete'))
             }
             request.onsuccess = () => {
                 resolve()
@@ -388,11 +419,14 @@ class IndexedDataBaseObjectStore {
         })
     }
 
+    /**
+     * @returns {Promise<boolean>}
+     */
     empty() {
         return new Promise((resolve, reject) => {
             const request = this.#storage.openCursor()
-            request.onerror = () => {
-                reject(new Error('Error to open cursor'))
+            request.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Error to open cursor'))
             }
             request.onsuccess = () => {
                 resolve(!request.result)
@@ -400,11 +434,15 @@ class IndexedDataBaseObjectStore {
         })
     }
 
+    /**
+     * @param {number} id 
+     * @returns {Promise<boolean>}
+     */
     has(id) {
         return new Promise((resolve, reject) => {
             const request = this.#storage.get(id)
-            request.onerror = () => {
-                reject(new Error('Error to get'))
+            request.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Error to get'))
             }
             request.onsuccess = () => {
                 resolve(request.result ? true : false)
@@ -420,33 +458,71 @@ class IndexedDataBaseObjectStoreIndex {
      */
     #index
 
+    /**
+     * @param {IDBIndex} index
+     */
     constructor(index) {
         this.#index = index
     }
 
-    cursor(value) {
+    /**
+     * @param {string} key
+     * @returns {Promise<object|null>}
+     */
+    get(key) {
         return new Promise((resolve, reject) => {
-            const result = []
-            const request = this.#index.openCursor(value)
-            request.onerror = () => {
-                reject(new Error('Error to index cursor'))
+            const request = this.#index.get(key)
+            request.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Error to get'))
             }
             request.onsuccess = () => {
-                if (request.result) {
-                    result.push(request.result.value)
-                    request.result.continue()
-                } else {
-                    resolve(result)
-                }
+                resolve(request.result ? request.result : null)
             }
         })
     }
 
+    /**
+     * @returns {Promise<Array<Object>>}
+     */
+    all() {
+        return new Promise((resolve, reject) => {
+            const request = this.#index.getAll()
+            request.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Error to get all'))
+            }
+            request.onsuccess = () => {
+                resolve(request.result ? request.result : null)
+            }
+        })
+    }
+
+    // cursor(value) {
+    //     return new Promise((resolve, reject) => {
+    //         const result = []
+    //         const request = this.#index.openCursor(value)
+    //         request.onerror = () => {
+    //             reject(new Error('Error to index cursor'))
+    //         }
+    //         request.onsuccess = () => {
+    //             if (request.result) {
+    //                 result.push(request.result.value)
+    //                 request.result.continue()
+    //             } else {
+    //                 resolve(result)
+    //             }
+    //         }
+    //     })
+    // }
+
+    /**
+     * @param {any} value 
+     * @returns {Promise<boolean>}
+     */
     empty(value) {
         return new Promise((resolve, reject) => {
             const request = this.#index.openCursor(value)
-            request.onerror = () => {
-                reject(new Error('Error to index cursor'))
+            request.onerror = event => {
+                reject(event.target.error ? event.target.error : new Error('Error to index cursor'))
             }
             request.onsuccess = () => {
                 resolve(!request.result)
@@ -455,7 +531,7 @@ class IndexedDataBaseObjectStoreIndex {
     }
 }
 
-class IndexedDataBaseConnections {
+export class IndexedDataBaseConnections {
     static #connections
 
     /**
@@ -559,39 +635,8 @@ for (let name in Kernel.versions) {
     IndexedDataBaseConnections.push(connection)
     connection.install(Kernel.versions[name].upgrade, Kernel.versions[name].version)
 }
-
-export class DataBase {
-    /**
-     * @var {IndexedDataBaseConnection}
-     */
-    #connection
-
-    constructor(name = 'database') {
-        const connection = IndexedDataBaseConnections.from(name)
-        if (!connection) {
-            throw new Error('Database not found')
-        }
-        this.#connection = connection
-    }
-
-    // async #transaction(request) {
-    //     request.database = this.#name
-    //     const response = await ServiceWorker.message.request(request, 'database', 1000)
-    //     return response.payload
-    // }
-
-    async storage(tables, write = true) {
-        if (!this.#connection.isOpen()) {
-            await this.#connection.open()
-        }
-        return this.#connection.transaction(tables, write)
-    }
-
-    drop(table) {
-        this.#connection.drop()
-    }
-
-    close() {
-        this.#connection.close()
-    }
-}
+// async #transaction(request) {
+//     request.database = this.#name
+//     const response = await ServiceWorker.message.request(request, 'database', 1000)
+//     return response.payload
+// }

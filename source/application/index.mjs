@@ -7,7 +7,7 @@
 //     alert(JSON.stringify(event.data))
 // })
 
-import { DataBase } from "./utils/DataBase.mjs"
+import { KeyValue } from "./models/KeyValue.mjs"
 // import { ServiceWorker } from "./utils/ServiceWorker.mjs"
 
 // const url = new URL(`${location.origin}/source/application/worker/ServiceWorker.js`)
@@ -20,12 +20,5 @@ import { DataBase } from "./utils/DataBase.mjs"
 //     console.log(response)
 // })
 
-const db = new DataBase()
-db.storage('tabela_teste').then(async transaction => {
-    const storage = transaction.storage('tabela_teste')
-    console.log(await storage.add({
-        title: 'test 1'
-    }))
-}).catch(error => {
-    console.error(error)
-})
+KeyValue.setValue('test', 'testando')
+KeyValue.getValue('test')
