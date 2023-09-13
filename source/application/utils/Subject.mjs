@@ -37,7 +37,9 @@ export class Subject {
     notify(data = null) {
         if (this.#handlers) {
             for (let handler of this.#handlers) {
-                handler.notify(data)
+                if (typeof handler === 'object' && handler instanceof Observer) {
+                    handler.notify(data, this)
+                }
             }
         }
     }

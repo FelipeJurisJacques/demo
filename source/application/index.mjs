@@ -21,42 +21,11 @@ import { DataBase } from "./utils/DataBase.mjs"
 // })
 
 const db = new DataBase()
-db.storage('tabela_teste').then(transaction => {
+db.storage('tabela_teste').then(async transaction => {
     const storage = transaction.storage('tabela_teste')
-    storage.add({
+    console.log(await storage.add({
         title: 'test 1'
-    }).then(response => {
-        console.log(response)
-    }).catch(error => {
-        console.error(error)
-    })
-    storage.add({
-        title: 'test 2'
-    }).then(response => {
-        console.log(response)
-    }).catch(error => {
-        console.error(error)
-    })
-}).catch(error => {
-    console.error(error)
-})
-db.storage('tabela_teste').then(transaction => {
-    console.log(transaction)
-    const storage = transaction.storage('tabela_teste')
-    storage.add({
-        title: 'test 3'
-    }).then(response => {
-        console.log(response)
-    }).catch(error => {
-        console.error(error)
-    })
-    storage.add({
-        title: 'test 4'
-    }).then(response => {
-        console.log(response)
-    }).catch(error => {
-        console.error(error)
-    })
+    }))
 }).catch(error => {
     console.error(error)
 })

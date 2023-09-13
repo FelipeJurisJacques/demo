@@ -2,9 +2,10 @@ export class Observer {
 
     /**
      * @param {*} data
+     * @param {object} target
      * @returns {void}
      */
-    notify(data) {
+    notify(data, target) {
         console.error(data)
     }
 }

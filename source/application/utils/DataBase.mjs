@@ -4,7 +4,7 @@ import { Asynchronous } from "./Asynchronous.mjs";
 import { ServiceWorker } from "./ServiceWorker.mjs";
 import { DataBase as Kernel } from "../kernels/DataBase.mjs";
 
-class IndexedDataBaseConnection extends Observer {
+class IndexedDataBaseConnection {
 
     /**
      * @var {string}
@@ -22,7 +22,7 @@ class IndexedDataBaseConnection extends Observer {
     #database
 
     /**
-     * @var {Array<IDBTransaction>}
+     * @var {Array<IndexedDataBaseTransaction>}
      */
     #transactions
 
@@ -30,7 +30,6 @@ class IndexedDataBaseConnection extends Observer {
      * @param {string} name
      */
     constructor(name) {
-        super()
         this.#name = name
         this.#open = false
         this.#transactions = []
@@ -60,6 +59,13 @@ class IndexedDataBaseConnection extends Observer {
         } else {
             reject(new Error('Unsupported IndexedDB'))
         }
+    }
+
+    /**
+     * @returns {Array<IndexedDataBaseTransaction>}
+     */
+    get transactions() {
+        return this.#transactions
     }
 
     /**
@@ -182,29 +188,82 @@ class IndexedDataBaseConnection extends Observer {
             throw new Error('The database connection is closing')
         }
         const transaction = this.#database.transaction(tables, write ? 'readwrite' : 'readonly')
-        const instance = new IndexedDataBaseTransaction(transaction)
+        const instance = new IndexedDataBaseTransaction(this, transaction)
         this.#transactions.push(instance)
         return instance
     }
-
-    notify(data) { }
 }
 
-class IndexedDataBaseTransaction extends Subject {
+class IndexedDataBaseTransaction {
+
+    /**
+     * @var {Error}
+     */
+    #error
+
+    /**
+     * @var {boolean}
+     */
+    #finalized
+
+    /**
+     * @var {IndexedDataBaseConnection}
+     */
+    #connection
+
+    /**
+     * @var {IDBTransaction}
+     */
     #transaction
 
-    constructor(transaction) {
-        super()
+    /**
+     * @param {IndexedDataBaseConnection} connection
+     * @param {IDBTransaction} transaction 
+     */
+    constructor(connection, transaction) {
+        this.#error = null
+        this.#finalized = false
+        this.#connection = connection
         this.#transaction = transaction
-        this.#transaction.onerror = () => {
-            this.notify(new Error('Transaction error'))
+        this.#transaction.onerror = event => {
+            if (!this.error) {
+                this.#error = new Error('Transaction error')
+            }
+            this.#unset()
         }
-        this.#transaction.onabort = () => {
-            this.notify(new Error('Transaction is aborted'))
+        this.#transaction.onabort = event => {
+            if (!this.error) {
+                this.#error = new Error('Transaction is aborted')
+            }
+            this.#unset()
         }
-        this.#transaction.oncomplete = () => {
-            this.notify()
+        this.#transaction.oncomplete = event => {
+            this.#unset()
         }
+    }
+
+    /**
+     * @returns {Error|null}
+     */
+    get error() {
+        return this.#transaction.error ? this.#transaction.error : this.#error
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    isFinalized() {
+        return this.#finalized || this.error
+    }
+
+    commit() {
+        if (!this.#finalized) {
+            this.#transaction.commit()
+        }
+    }
+
+    abort() {
+        this.#transaction.abort()
     }
 
     /**
@@ -215,10 +274,28 @@ class IndexedDataBaseTransaction extends Subject {
         return new IndexedDataBaseObjectStore(this.#transaction.objectStore(table))
     }
 
-    complete() {
-        const observer = new Asynchronous();
-        this.subscribe(observer)
-        return observer.observe(1000)
+    /**
+     * @returns {Promise<Error|void}}
+     */
+    async complete() {
+        while (!this.isFinalized()) {
+            await Asynchronous.wait(10)
+        }
+        if (this.error) {
+            throw this.error
+        }
+        return
+    }
+
+    #unset() {
+        this.#finalized = true
+        if (this.#connection.transactions.length > 0) {
+            for (let i in this.#connection.transactions) {
+                if (this.#connection.transactions[i] === this) {
+                    this.#connection.transactions.splice(i, 1)
+                }
+            }
+        }
     }
 }
 
