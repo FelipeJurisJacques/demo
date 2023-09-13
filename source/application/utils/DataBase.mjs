@@ -27,6 +27,30 @@ class IndexedDataBaseConnection extends Observer {
     #transactions
 
     /**
+     * @param {string} name
+     */
+    constructor(name) {
+        super()
+        this.#name = name
+        this.#open = false
+        this.#transactions = []
+    }
+
+    /**
+     * @returns {string}
+     */
+    get name() {
+        return this.#name
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    isOpen() {
+        return this.#open && this.#database
+    }
+
+    /**
      * @method static
      * @returns {IDBFactory}
      */
@@ -38,17 +62,9 @@ class IndexedDataBaseConnection extends Observer {
         }
     }
 
-    constructor(name) {
-        super()
-        this.#name = name
-        this.#open = false
-        this.#transactions = []
-    }
-
-    get name() {
-        return this.#name
-    }
-
+    /**
+     * @returns {Promise<number>}
+     */
     async version() {
         if (this.#database) {
             return this.#database.version
@@ -62,6 +78,9 @@ class IndexedDataBaseConnection extends Observer {
         reject(new Error('Database not found'))
     }
 
+    /**
+     * @returns {Promise}
+     */
     open() {
         return new Promise(async (resolve, reject) => {
             let open = null
@@ -88,6 +107,11 @@ class IndexedDataBaseConnection extends Observer {
         })
     }
 
+    /**
+     * @param {object} upgrade
+     * @param {number} version
+     * @returns {Promise}
+     */
     install(upgrade, version) {
         return new Promise((resolve, reject) => {
             // IDBOpenDBRequest
@@ -151,19 +175,15 @@ class IndexedDataBaseConnection extends Observer {
     /**
      * @param {Array} tables
      * @param {boolean} write
-     * @returns {Promise<IndexedDataBaseTransaction>}
+     * @returns {IndexedDataBaseTransaction}
      */
-    async transaction(tables, write = true) {
+    transaction(tables, write = true) {
         if (!this.open || !this.#database) {
-            await this.open()
+            throw new Error('The database connection is closing')
         }
-        // while (this.#transaction) {
-        //     await Asynchronous.wait(10)
-        // }
         const transaction = this.#database.transaction(tables, write ? 'readwrite' : 'readonly')
         const instance = new IndexedDataBaseTransaction(transaction)
         this.#transactions.push(instance)
-        // this.#transaction.subscribe(this)
         return instance
     }
 
@@ -188,7 +208,6 @@ class IndexedDataBaseTransaction extends Subject {
     }
 
     /**
-     * 
      * @param {string} table 
      * @returns {IndexedDataBaseObjectStore}
      */
@@ -484,7 +503,10 @@ export class DataBase {
     //     return response.payload
     // }
 
-    storage(tables, write = true) {
+    async storage(tables, write = true) {
+        if (!this.#connection.isOpen()) {
+            await this.#connection.open()
+        }
         return this.#connection.transaction(tables, write)
     }
 

@@ -40,7 +40,6 @@ db.storage('tabela_teste').then(transaction => {
 }).catch(error => {
     console.error(error)
 })
-db.close()
 db.storage('tabela_teste').then(transaction => {
     console.log(transaction)
     const storage = transaction.storage('tabela_teste')
