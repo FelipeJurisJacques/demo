@@ -7,7 +7,8 @@
 //     alert(JSON.stringify(event.data))
 // })
 
-import { KeyValue } from "./models/KeyValue.mjs"
+import { Recursive } from "./models/Recursive.mjs";
+
 // import { ServiceWorker } from "./utils/ServiceWorker.mjs"
 
 // const url = new URL(`${location.origin}/source/application/worker/ServiceWorker.js`)
@@ -19,6 +20,10 @@ import { KeyValue } from "./models/KeyValue.mjs"
 // ServiceWorker.message.request('teste 2').then(response => {
 //     console.log(response)
 // })
-
-KeyValue.setValue('test', 'testando')
-KeyValue.getValue('test')
+Recursive.base().then(data => {
+    data.variavel_1 = 'teste'
+    data.variavel_2 = 2
+    console.log(data)
+}).catch(event => {
+    console.error(event)
+})

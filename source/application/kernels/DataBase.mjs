@@ -44,7 +44,29 @@ export class DataBase {
                         },
                     ],
                 }
-            }
+            },
+            recursive: {
+                version: 1,
+                upgrade: {
+                    stores: [
+                        {
+                            name: 'storage',
+                            options: {
+                                keyPath: 'id',
+                                autoIncrement: true,
+                            },
+                            indexes: [
+                                {
+                                    name: 'parent',
+                                    options: {
+                                        unique: false,
+                                    }
+                                }
+                            ],
+                        },
+                    ],
+                }
+            },
         }
     }
 }

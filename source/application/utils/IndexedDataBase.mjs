@@ -1,5 +1,5 @@
 import { Asynchronous } from "./Asynchronous.mjs";
-import { ServiceWorker } from "./ServiceWorker.mjs";
+// import { ServiceWorker } from "./ServiceWorker.mjs";
 import { DataBase as Kernel } from "../kernels/DataBase.mjs";
 
 class IndexedDataBaseConnection {
@@ -43,7 +43,7 @@ class IndexedDataBaseConnection {
     /**
      * @returns {boolean}
      */
-    isOpen() {
+    get opened() {
         return this.#open && this.#database
     }
 
@@ -88,6 +88,7 @@ class IndexedDataBaseConnection {
     open() {
         return new Promise(async (resolve, reject) => {
             let open = null
+            this.#transactions = []
             // IDBOpenDBRequest
             const databases = await this.indexedDB.databases()
             for (let database of databases) {
@@ -104,6 +105,7 @@ class IndexedDataBaseConnection {
                     this.#database = open.result
                     this.#open = true
                     resolve()
+                    console.log(`Database ${this.name} opened`)
                 }
             } else {
                 reject(new Error('Database not found'))
@@ -119,6 +121,7 @@ class IndexedDataBaseConnection {
     install(upgrade, version) {
         return new Promise((resolve, reject) => {
             // IDBOpenDBRequest
+            this.#transactions = []
             const open = this.indexedDB.open(this.#name, version)
             open.onupgradeneeded = event => {
                 const database = event.target.result
@@ -151,6 +154,7 @@ class IndexedDataBaseConnection {
             open.onsuccess = () => {
                 this.#database = open.result
                 this.#open = true
+                console.log(`Database ${this.name} opened`)
                 resolve()
             }
         })
@@ -159,8 +163,10 @@ class IndexedDataBaseConnection {
     close() {
         if (this.#open && this.#database) {
             this.#database.close()
-            this.#open = false
         }
+        this.#open = false
+        this.#transactions = []
+        console.log(`Database ${this.name} closed`)
     }
 
     drop() {
@@ -173,20 +179,35 @@ class IndexedDataBaseConnection {
             open.onsuccess = () => {
                 resolve()
             }
+            this.#transactions = []
         })
     }
 
     /**
-     * @param {string|Array<string>} tables
+     * @param {string|Array<string>} names
      * @param {boolean} write
      * @returns {IndexedDataBaseTransaction}
      */
-    transaction(tables, write = true) {
-        if (!this.isOpen()) {
+    transaction(names, write = true) {
+        if (typeof names === 'object' && names instanceof Array) {
+            names = names.sort()
+        }
+        if (!this.opened) {
             throw new Error('The database connection is closing')
         }
-        const transaction = this.#database.transaction(tables, write ? 'readwrite' : 'readonly')
-        const instance = new IndexedDataBaseTransaction(this, transaction)
+        for (let transaction of this.#transactions) {
+            if (
+                !transaction.done
+                && (!write || transaction.mode === 'readwrite')
+            ) {
+                console.log(this.#transactions.names)
+                for (let name of this.#transactions.names) {
+
+                }
+            }
+        }
+        const object = this.#database.transaction(names, write ? 'readwrite' : 'readonly')
+        const instance = new IndexedDataBaseTransaction(this, object)
         this.#transactions.push(instance)
         return instance
     }
@@ -195,14 +216,19 @@ class IndexedDataBaseConnection {
 class IndexedDataBaseTransaction {
 
     /**
+     * @var {boolean}
+     */
+    #done
+
+    /**
      * @var {Error}
      */
     #error
 
     /**
-     * @var {boolean}
+     * @var {Array<IndexedDataBaseObjectStore>}
      */
-    #finalized
+    #storages
 
     /**
      * @var {IndexedDataBaseConnection}
@@ -219,21 +245,37 @@ class IndexedDataBaseTransaction {
      * @param {IDBTransaction} transaction 
      */
     constructor(connection, transaction) {
+        this.#done = false
         this.#error = null
-        this.#finalized = false
+        this.#storages = []
         this.#connection = connection
         this.#transaction = transaction
         this.#transaction.onerror = event => {
             this.#error = event.target.error ? event.target.error : new Error('Transaction error')
+            this.#done = true
+            console.error(this.error)
             this.#unset()
         }
         this.#transaction.onabort = event => {
             this.#error = event.target.error ? event.target.error : new Error('Transaction is aborted')
+            this.#done = true
+            console.error(this.error)
             this.#unset()
         }
         this.#transaction.oncomplete = event => {
+            if (event.target.error) {
+                this.#error = event.target.error
+            }
+            this.#done = true
             this.#unset()
         }
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    get done() {
+        return this.#done
     }
 
     /**
@@ -244,14 +286,21 @@ class IndexedDataBaseTransaction {
     }
 
     /**
-     * @returns {boolean}
+     * @returns {string}
      */
-    isFinalized() {
-        return this.#finalized || this.error
+    get mode() {
+        this.#transaction.mode
+    }
+
+    /**
+     * @returns {Array}
+     */
+    get names() {
+        return this.#transaction.objectStoreNames
     }
 
     commit() {
-        if (!this.#finalized) {
+        if (!this.#done) {
             this.#transaction.commit()
         }
     }
@@ -261,18 +310,28 @@ class IndexedDataBaseTransaction {
     }
 
     /**
-     * @param {string} table 
+     * @param {string} name 
      * @returns {IndexedDataBaseObjectStore}
      */
-    storage(table) {
-        return new IndexedDataBaseObjectStore(this.#transaction.objectStore(table))
+    storage(name) {
+        if (this.#storages.length > 0) {
+            for (let storage of this.#storages) {
+                if (storage.name === name) {
+                    return storage
+                }
+            }
+        }
+        const object = this.#transaction.objectStore(name)
+        const instance = new IndexedDataBaseObjectStore(object)
+        this.#storages.push(instance)
+        return instance
     }
 
     /**
      * @returns {Promise<Error|void}}
      */
     async complete() {
-        while (!this.isFinalized()) {
+        while (!this.done) {
             await Asynchronous.wait(10)
         }
         if (this.error) {
@@ -282,17 +341,22 @@ class IndexedDataBaseTransaction {
     }
 
     #unset() {
-        this.#finalized = true
+        let done = 0
         if (this.#connection.transactions.length > 0) {
-            for (let i in this.#connection.transactions) {
-                if (this.#connection.transactions[i] === this) {
-                    this.#connection.transactions.splice(i, 1)
+            // for (let i in this.#connection.transactions) {
+            //     if (this.#connection.transactions[i] === this) {
+            //         this.#connection.transactions.splice(i, 1)
+            //     }
+            // }
+            for (let transaction of this.#connection.transactions) {
+                if (transaction.done) {
+                    done++
                 }
             }
         }
-        // if (this.error) {
-        //     console.error(this.error)
-        // }
+        if (done === this.#connection.transactions.length) {
+            this.#connection.close()
+        }
     }
 }
 
@@ -308,6 +372,10 @@ class IndexedDataBaseObjectStore {
      */
     constructor(storage) {
         this.#storage = storage
+    }
+
+    get name() {
+        this.#storage.name
     }
 
     /**
@@ -393,7 +461,7 @@ class IndexedDataBaseObjectStore {
      */
     put(data, id = 0) {
         return new Promise((resolve, reject) => {
-            const request = id > 0 ?  this.#storage.put(data, id) : this.#storage.put(data)
+            const request = id > 0 ? this.#storage.put(data, id) : this.#storage.put(data)
             request.onerror = event => {
                 reject(event.target.error ? event.target.error : new Error('Error to put'))
             }
@@ -531,7 +599,7 @@ class IndexedDataBaseObjectStoreIndex {
     }
 }
 
-export class IndexedDataBaseConnections {
+export class IndexedDataBase extends IndexedDataBaseConnection {
     static #connections
 
     /**
@@ -631,8 +699,8 @@ export class IndexedDataBaseConnections {
 
 let connection
 for (let name in Kernel.versions) {
-    connection = new IndexedDataBaseConnection(name)
-    IndexedDataBaseConnections.push(connection)
+    connection = new IndexedDataBase(name)
+    IndexedDataBase.push(connection)
     connection.install(Kernel.versions[name].upgrade, Kernel.versions[name].version)
 }
 // async #transaction(request) {

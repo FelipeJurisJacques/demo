@@ -1,4 +1,4 @@
-import { IndexedDataBaseConnections } from "../utils/IndexedDataBase.mjs";
+import { IndexedDataBase } from "../utils/IndexedDataBase.mjs";
 
 export class KeyValue {
     
@@ -7,7 +7,7 @@ export class KeyValue {
      * @returns {any}
      */
     static async getValue(key) {
-        const connection = IndexedDataBaseConnections.from('key_value')
+        const connection = IndexedDataBase.from('key_value')
         await connection.open()
         const transaction = connection.transaction('values', false)
         const storage = transaction.storage('values')
@@ -23,7 +23,7 @@ export class KeyValue {
      * @returns {void}
      */
     static async setValue(key, value) {
-        const connection = IndexedDataBaseConnections.from('key_value')
+        const connection = IndexedDataBase.from('key_value')
         await connection.open()
         const transaction = connection.transaction('values', true)
         const storage = transaction.storage('values')
