@@ -4,15 +4,21 @@ import { DataBase as Kernel } from "../kernels/DataBase.mjs";
 
 class IndexedDataBaseConnection {
 
+
     /**
      * @var {string}
      */
     #name
 
     /**
+     * @var {Error|null}
+     */
+    #error
+
+    /**
      * @var {boolean}
      */
-    #open
+    #state
 
     /**
      * @var {IDBDatabase}
@@ -29,7 +35,7 @@ class IndexedDataBaseConnection {
      */
     constructor(name) {
         this.#name = name
-        this.#open = false
+        this.#state = false
         this.#transactions = []
     }
 
@@ -44,7 +50,7 @@ class IndexedDataBaseConnection {
      * @returns {boolean}
      */
     get opened() {
-        return this.#open && this.#database
+        return this.#state && this.#database
     }
 
     /**
@@ -87,28 +93,45 @@ class IndexedDataBaseConnection {
      */
     open() {
         return new Promise(async (resolve, reject) => {
-            let open = null
-            this.#transactions = []
-            // IDBOpenDBRequest
-            const databases = await this.indexedDB.databases()
-            for (let database of databases) {
-                if (this.#name === database.name) {
-                    open = this.indexedDB.open(this.#name)
-                    break
+            if (this.#state) {
+                while (this.#state && !this.#database) {
+                    await Asynchronous.wait(10)
                 }
-            }
-            if (open) {
-                open.onerror = () => {
-                    reject(new Error('Fail to open'))
-                }
-                open.onsuccess = () => {
-                    this.#database = open.result
-                    this.#open = true
+                if (this.#database) {
                     resolve()
-                    console.log(`Database ${this.name} opened`)
+                } else {
+                    reject(this.#error ? this.#error : reject(new Error('Fail to open')))
                 }
             } else {
-                reject(new Error('Database not found'))
+                this.#error = null
+                this.#state = true
+                this.#transactions = []
+                // IDBOpenDBRequest
+                let open = null
+                const databases = await this.indexedDB.databases()
+                for (let database of databases) {
+                    if (this.#name === database.name) {
+                        open = this.indexedDB.open(this.#name)
+                        break
+                    }
+                }
+                if (open) {
+                    open.onerror = event => {
+                        this.#error = event.target.error ? event.target.error : new Error('Fail to open')
+                        this.#state = false
+                        console.error(this.#error)
+                        reject(this.#error)
+                    }
+                    open.onsuccess = () => {
+                        this.#database = open.result
+                        console.log(`Database ${this.name} opened`)
+                        resolve()
+                    }
+                } else {
+                    this.#error = new Error('Database not found')
+                    this.#state = false
+                    reject(this.#error)
+                }
             }
         })
     }
@@ -119,52 +142,67 @@ class IndexedDataBaseConnection {
      * @returns {Promise}
      */
     install(upgrade, version) {
-        return new Promise((resolve, reject) => {
-            // IDBOpenDBRequest
-            this.#transactions = []
-            const open = this.indexedDB.open(this.#name, version)
-            open.onupgradeneeded = event => {
-                const database = event.target.result
-                if (upgrade.stores) {
-                    let storage
-                    for (let store of upgrade.stores) {
-                        if (database.objectStoreNames.contains(store.name)) {
-                            continue
-                        }
-                        if (store.options) {
-                            storage = database.createObjectStore(store.name, store.options)
-                        } else {
-                            storage = database.createObjectStore(store.name)
-                        }
-                        if (store.indexes) {
-                            for (let index of store.indexes) {
-                                if (index.options) {
-                                    storage.createIndex(index.name, index.name, index.options)
-                                } else {
-                                    storage.createIndex(index.name, index.name)
+        return new Promise(async (resolve, reject) => {
+            if (this.#state) {
+                while (this.#state && !this.#database) {
+                    await Asynchronous.wait(10)
+                }
+                if (this.#database) {
+                    resolve()
+                } else {
+                    reject(this.#error ? this.#error : reject(new Error('Fail to open')))
+                }
+            } else {
+                this.#error = null
+                // IDBOpenDBRequest
+                const open = this.indexedDB.open(this.#name, version)
+                this.#state = true
+                this.#transactions = []
+                open.onupgradeneeded = event => {
+                    const database = event.target.result
+                    if (upgrade.stores) {
+                        let storage
+                        for (let store of upgrade.stores) {
+                            if (database.objectStoreNames.contains(store.name)) {
+                                continue
+                            }
+                            if (store.options) {
+                                storage = database.createObjectStore(store.name, store.options)
+                            } else {
+                                storage = database.createObjectStore(store.name)
+                            }
+                            if (store.indexes) {
+                                for (let index of store.indexes) {
+                                    if (index.options) {
+                                        storage.createIndex(index.name, index.name, index.options)
+                                    } else {
+                                        storage.createIndex(index.name, index.name)
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            open.onerror = event => {
-                reject(event.target.error ? event.target.error : new Error('Fail to open'))
-            }
-            open.onsuccess = () => {
-                this.#database = open.result
-                this.#open = true
-                console.log(`Database ${this.name} opened`)
-                resolve()
+                open.onerror = event => {
+                    this.#state = false
+                    this.#error = event.target.error ? event.target.error : new Error('Fail to open')
+                    console.error(this.#error)
+                    reject(this.#error)
+                }
+                open.onsuccess = event => {
+                    this.#database = open.result
+                    console.log(`Database ${this.name} opened`)
+                    resolve()
+                }
             }
         })
     }
 
     close() {
-        if (this.#open && this.#database) {
+        if (this.#database) {
             this.#database.close()
         }
-        this.#open = false
+        this.#state = false
         this.#transactions = []
         console.log(`Database ${this.name} closed`)
     }
@@ -173,10 +211,13 @@ class IndexedDataBaseConnection {
         return new Promise(async (resolve, reject) => {
             // IDBOpenDBRequest
             const open = this.indexedDB.deleteDatabase(this.name)
+            this.#state = true
             open.onerror = event => {
+                this.#state = false
                 reject(event.target.error ? event.target.error : new Error(`Error to drop database ${this.name}`))
             }
-            open.onsuccess = () => {
+            open.onsuccess = event => {
+                this.#state = false
                 resolve()
             }
             this.#transactions = []
@@ -186,26 +227,38 @@ class IndexedDataBaseConnection {
     /**
      * @param {string|Array<string>} names
      * @param {boolean} write
-     * @returns {IndexedDataBaseTransaction}
+     * @returns {Promise<IndexedDataBaseTransaction>}
      */
-    transaction(names, write = true) {
-        if (typeof names === 'object' && names instanceof Array) {
+    async transaction(names, write = true) {
+        if (typeof names === 'object' && names instanceof Array && names.length > 1) {
             names = names.sort()
         }
         if (!this.opened) {
-            throw new Error('The database connection is closing')
+            await this.open()
         }
-        for (let transaction of this.#transactions) {
-            if (
-                !transaction.done
-                && (!write || transaction.mode === 'readwrite')
-            ) {
-                console.log(this.#transactions.names)
-                for (let name of this.#transactions.names) {
-
-                }
-            }
-        }
+        // if (!this.opened) {
+        //     throw new Error('The database connection is closing')
+        // }
+        // for (let transaction of this.#transactions) {
+        //     if (
+        //         !transaction.done
+        //         && (!write || transaction.mode === 'readwrite')
+        //     ) {
+        //         let list = transaction.names
+        //         if (names.length === list.length) {
+        //             let equal = true
+        //             for (let i = 0; i < names.length; i++) {
+        //                 if (names[i] !== list[i]) {
+        //                     equal = false
+        //                     break
+        //                 }
+        //             }
+        //             if (equal) {
+        //                 return transaction
+        //             }
+        //         }
+        //     }
+        // }
         const object = this.#database.transaction(names, write ? 'readwrite' : 'readonly')
         const instance = new IndexedDataBaseTransaction(this, object)
         this.#transactions.push(instance)
@@ -293,10 +346,14 @@ class IndexedDataBaseTransaction {
     }
 
     /**
-     * @returns {Array}
+     * @returns {Array<string>}
      */
     get names() {
-        return this.#transaction.objectStoreNames
+        const list = []
+        for (let name of this.#transaction.objectStoreNames) {
+            list.push(name)
+        }
+        return list.length > 1 ? list.sort() : list
     }
 
     commit() {
@@ -399,8 +456,7 @@ class IndexedDataBaseObjectStore {
                 reject(event.target.error ? event.target.error : new Error('Error to insert data'))
             }
             request.onsuccess = event => {
-                console.log(event)
-                resolve(request.result)
+                resolve(event.target.result ? event.target.result : null)
             }
         })
     }
@@ -415,8 +471,8 @@ class IndexedDataBaseObjectStore {
             request.onerror = event => {
                 reject(event.target.error ? event.target.error : new Error('Error to get'))
             }
-            request.onsuccess = () => {
-                resolve(request.result ? request.result : null)
+            request.onsuccess = event => {
+                resolve(event.target.result ? event.target.result : null)
             }
         })
     }
@@ -534,32 +590,33 @@ class IndexedDataBaseObjectStoreIndex {
     }
 
     /**
-     * @param {string} key
+     * @param {any} value
      * @returns {Promise<object|null>}
      */
-    get(key) {
+    get(value) {
         return new Promise((resolve, reject) => {
-            const request = this.#index.get(key)
+            const request = this.#index.get(value)
             request.onerror = event => {
                 reject(event.target.error ? event.target.error : new Error('Error to get'))
             }
-            request.onsuccess = () => {
-                resolve(request.result ? request.result : null)
+            request.onsuccess = event => {
+                resolve(event.target.result)
             }
         })
     }
 
     /**
+     * @param {any} value
      * @returns {Promise<Array<Object>>}
      */
-    all() {
+    all(value) {
         return new Promise((resolve, reject) => {
-            const request = this.#index.getAll()
+            const request = this.#index.getAll(value)
             request.onerror = event => {
                 reject(event.target.error ? event.target.error : new Error('Error to get all'))
             }
-            request.onsuccess = () => {
-                resolve(request.result ? request.result : null)
+            request.onsuccess = event => {
+                resolve(event.target.result)
             }
         })
     }

@@ -1,3 +1,4 @@
+import { Calendar } from "../utils/Calendar.mjs";
 import { IndexedDataBase } from "../utils/IndexedDataBase.mjs";
 
 const handler = {
@@ -10,9 +11,41 @@ const handler = {
 }
 
 export class Recursive {
+
+    /**
+     * @var {IndexedDataBase}
+     */
     static #connection
 
-    #payload
+    /**
+     * @var {IndexedDataBaseTransaction}
+     */
+    #transaction
+
+    /**
+     * @var {number}
+     */
+    #id
+
+    /**
+     * @var {object}
+     */
+    #data
+
+    /**
+     * @var {number}
+     */
+    #update
+
+    /**
+     * @var {number}
+     */
+    #parent
+
+    /**
+     * @var {number}
+     */
+    #interaction
 
     static get #database() {
         return 'recursive'
@@ -30,42 +63,84 @@ export class Recursive {
         return 'parent'
     }
 
-    static async #storage(write = true) {
-        if (!this.#connection) {
-            this.#connection = IndexedDataBase.from(this.#database)
+    /**
+     * @param {boolean} write
+     * @returns {IndexedDataBaseObjectStore}
+     */
+    async #storage(write = true) {
+        if (!Recursive.#connection) {
+            Recursive.#connection = IndexedDataBase.from(Recursive.#database)
         }
-        if (!this.#connection.opened) {
-            await this.#connection.open()
+        if (
+            !this.#transaction
+            || this.#transaction.done
+            || (write && this.#transaction.mode !== 'readwrite')
+        ) {
+            this.#transaction = await Recursive.#connection.transaction(Recursive.#table, write)
         }
-        const transaction = this.#connection.transaction(this.#table, write)
-        return transaction.storage(this.#table)
+        return this.#transaction.storage(Recursive.#table)
     }
 
     static async base() {
-        const storage = this.#storage(false)
-        const data = await storage.get(1)
-        const target = new Recursive(data)
+        const target = new Recursive()
+        const storage = await target.#storage(false)
+        const index = storage.index(this.#foreignerKey)
+        const payload = await index.get(0)
+        if (payload) {
+            target.#id = payload.id
+            target.#data = payload.data
+            target.#parent = payload.parent
+            target.#update = payload.update
+        } else {
+            target.#data = {}
+            target.#parent = 0
+        }
         const instance = new Proxy(target, handler)
         return instance
     }
 
-    constructor(payload) {
-        this.#payload = payload ? payload : {
-            parent: 0,
-            data: {},
-        }
+    constructor() {
+        this.#interaction = 0
     }
 
-    async setValue(key, value) {
-        this.#payload.data[key] = value
+    setValue(key, value) {
+        if (!this.#data[key] || this.#data[key] !== value) {
+            this.#data[key] = value
+            this.#interaction++
+            this.#autoSave(this.#interaction)
+        }
         return true
     }
 
-    async getValue(key) {
-        const value = this.#payload.data[key]
-        if (typeof value === 'object') {
+    getValue(key) {
+        return this.#data[key]
+    }
 
+    async save() {
+        const storage = await this.#storage(true)
+        this.#update = Calendar.timestamp()
+        if (this.#id) {
+            await storage.put({
+                id: this.#id,
+                data: this.#data,
+                parent: this.#parent,
+                update: this.#update,
+            })
+        } else {
+            this.#id = await storage.add({
+                data: this.#data,
+                parent: this.#parent,
+                update: this.#update,
+            })
         }
-        return value
+        console.log(this)
+    }
+
+    #autoSave(interaction) {
+        setTimeout(() => {
+            if (interaction === this.#interaction) {
+                this.save()
+            }
+        }, 1)
     }
 }

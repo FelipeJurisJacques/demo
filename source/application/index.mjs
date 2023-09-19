@@ -7,7 +7,17 @@
 //     alert(JSON.stringify(event.data))
 // })
 
-import { Recursive } from "./models/Recursive.mjs";
+import { Integrity } from "./models/Integrity.mjs";
+
+Integrity.base().then(data => {
+    data.teste = 5
+    data.teste_1 = 'testando'
+    data.teste_2 = 3
+}).catch(event => {
+    console.error(event)
+})
+
+// import { Recursive } from "./models/Recursive.mjs";
 
 // import { ServiceWorker } from "./utils/ServiceWorker.mjs"
 
@@ -20,10 +30,10 @@ import { Recursive } from "./models/Recursive.mjs";
 // ServiceWorker.message.request('teste 2').then(response => {
 //     console.log(response)
 // })
-Recursive.base().then(data => {
-    data.variavel_1 = 'teste'
-    data.variavel_2 = 2
-    console.log(data)
-}).catch(event => {
-    console.error(event)
-})
+// Recursive.base().then(async data => {
+//     data.variavel_1 = 'teste'
+//     data.variavel_2 = 2
+//     console.log(data)
+// }).catch(event => {
+//     console.error(event)
+// })

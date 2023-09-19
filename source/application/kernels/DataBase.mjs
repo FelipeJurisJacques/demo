@@ -67,6 +67,58 @@ export class DataBase {
                     ],
                 }
             },
+            integrity: {
+                version: 1,
+                upgrade: {
+                    stores: [
+                        {
+                            name: 'storage',
+                            options: {
+                                keyPath: 'id',
+                                autoIncrement: true,
+                            },
+                            indexes: [
+                                {
+                                    name: 'key',
+                                    options: {
+                                        unique: false,
+                                    }
+                                },
+                                {
+                                    name: 'child',
+                                    options: {
+                                        unique: false,
+                                    }
+                                },
+                                {
+                                    name: 'parent',
+                                    options: {
+                                        unique: false,
+                                    }
+                                },
+                                {
+                                    name: 'created',
+                                    options: {
+                                        unique: false,
+                                    }
+                                },
+                                {
+                                    name: 'updated',
+                                    options: {
+                                        unique: false,
+                                    }
+                                },
+                                {
+                                    name: 'deleted',
+                                    options: {
+                                        unique: false,
+                                    }
+                                },
+                            ],
+                        },
+                    ],
+                }
+            },
         }
     }
 }
