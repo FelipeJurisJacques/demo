@@ -97,12 +97,6 @@ export class DataBase {
                                     }
                                 },
                                 {
-                                    name: 'created',
-                                    options: {
-                                        unique: false,
-                                    }
-                                },
-                                {
                                     name: 'updated',
                                     options: {
                                         unique: false,

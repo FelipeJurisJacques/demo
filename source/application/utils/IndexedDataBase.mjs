@@ -4,7 +4,6 @@ import { DataBase as Kernel } from "../kernels/DataBase.mjs";
 
 class IndexedDataBaseConnection {
 
-
     /**
      * @var {string}
      */
@@ -26,6 +25,11 @@ class IndexedDataBaseConnection {
     #database
 
     /**
+     * @var {number}
+     */
+    #interaction
+
+    /**
      * @var {Array<IndexedDataBaseTransaction>}
      */
     #transactions
@@ -36,6 +40,7 @@ class IndexedDataBaseConnection {
     constructor(name) {
         this.#name = name
         this.#state = false
+        this.#interaction = 0
         this.#transactions = []
     }
 
@@ -124,6 +129,7 @@ class IndexedDataBaseConnection {
                     }
                     open.onsuccess = () => {
                         this.#database = open.result
+                        this.#autoClose()
                         console.log(`Database ${this.name} opened`)
                         resolve()
                     }
@@ -191,6 +197,7 @@ class IndexedDataBaseConnection {
                 }
                 open.onsuccess = event => {
                     this.#database = open.result
+                    this.#autoClose()
                     console.log(`Database ${this.name} opened`)
                     resolve()
                 }
@@ -201,10 +208,10 @@ class IndexedDataBaseConnection {
     close() {
         if (this.#database) {
             this.#database.close()
+            this.#state = false
+            this.#transactions = []
+            console.log(`Database ${this.name} closed`)
         }
-        this.#state = false
-        this.#transactions = []
-        console.log(`Database ${this.name} closed`)
     }
 
     drop() {
@@ -260,9 +267,34 @@ class IndexedDataBaseConnection {
         //     }
         // }
         const object = this.#database.transaction(names, write ? 'readwrite' : 'readonly')
-        const instance = new IndexedDataBaseTransaction(this, object)
+        const instance = new IndexedDataBaseTransaction(object)
         this.#transactions.push(instance)
+        this.#autoClose()
         return instance
+    }
+
+    #autoClose() {
+        if (this.opened) {
+            this.interaction++
+            const interaction = this.#interaction
+            setTimeout(() => {
+                if (this.opened) {
+                    if (interaction === this.#interaction) {
+                        let done = 0
+                        if (this.transactions.length > 0) {
+                            for (let transaction of this.transactions) {
+                                if (transaction.done) {
+                                    done++
+                                }
+                            }
+                        }
+                        if (done === this.transactions.length) {
+                            this.close()
+                        }
+                    }
+                }
+            }, 1000)
+        }
     }
 }
 
@@ -284,43 +316,33 @@ class IndexedDataBaseTransaction {
     #storages
 
     /**
-     * @var {IndexedDataBaseConnection}
-     */
-    #connection
-
-    /**
      * @var {IDBTransaction}
      */
     #transaction
 
     /**
-     * @param {IndexedDataBaseConnection} connection
      * @param {IDBTransaction} transaction 
      */
-    constructor(connection, transaction) {
+    constructor(transaction) {
         this.#done = false
         this.#error = null
         this.#storages = []
-        this.#connection = connection
         this.#transaction = transaction
         this.#transaction.onerror = event => {
             this.#error = event.target.error ? event.target.error : new Error('Transaction error')
             this.#done = true
             console.error(this.error)
-            this.#unset()
         }
         this.#transaction.onabort = event => {
             this.#error = event.target.error ? event.target.error : new Error('Transaction is aborted')
             this.#done = true
             console.error(this.error)
-            this.#unset()
         }
         this.#transaction.oncomplete = event => {
             if (event.target.error) {
                 this.#error = event.target.error
             }
             this.#done = true
-            this.#unset()
         }
     }
 
@@ -395,25 +417,6 @@ class IndexedDataBaseTransaction {
             throw this.error
         }
         return
-    }
-
-    #unset() {
-        let done = 0
-        if (this.#connection.transactions.length > 0) {
-            // for (let i in this.#connection.transactions) {
-            //     if (this.#connection.transactions[i] === this) {
-            //         this.#connection.transactions.splice(i, 1)
-            //     }
-            // }
-            for (let transaction of this.#connection.transactions) {
-                if (transaction.done) {
-                    done++
-                }
-            }
-        }
-        if (done === this.#connection.transactions.length) {
-            this.#connection.close()
-        }
     }
 }
 
