@@ -85,13 +85,13 @@ export class DataBase {
                                     }
                                 },
                                 {
-                                    name: 'child',
+                                    name: 'parent',
                                     options: {
                                         unique: false,
                                     }
                                 },
                                 {
-                                    name: 'parent',
+                                    name: 'deleted',
                                     options: {
                                         unique: false,
                                     }
@@ -103,7 +103,7 @@ export class DataBase {
                                     }
                                 },
                                 {
-                                    name: 'deleted',
+                                    name: 'multiple',
                                     options: {
                                         unique: false,
                                     }

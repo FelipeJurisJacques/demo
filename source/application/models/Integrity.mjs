@@ -15,14 +15,26 @@ const handler = {
     },
 }
 
-class Entity {
+export class Integrity {
     #id
     #key
     #value
     #parent
-    #updated
     #deleted
+    #updated
+    #multiple
     #interaction
+
+    /**
+     * @returns {Promise<Proxy>}
+     */
+    static async base() {
+        const instance = new Integrity()
+        instance.#id = 0
+        instance.#multiple = true
+        await instance.load()
+        return new Proxy(instance, handler)
+    }
 
     constructor(payload = {}) {
         this.#interaction = 0
@@ -30,8 +42,9 @@ class Entity {
         this.#key = payload.key
         this.#value = payload.value
         this.#parent = payload.parent
-        this.#updated = payload.updated
         this.#deleted = payload.deleted ? true : false
+        this.#updated = payload.updated
+        this.#multiple = payload.multiple ? true : false
     }
 
     get id() {
@@ -50,12 +63,16 @@ class Entity {
         return this.#parent
     }
 
+    get deleted() {
+        return this.#deleted
+    }
+
     get updated() {
         return this.#updated
     }
 
-    get deleted() {
-        return this.#deleted
+    get multiple() {
+        return this.#multiple
     }
 
     set key(value) {
@@ -68,12 +85,13 @@ class Entity {
     set value(value) {
         if (this.#value !== value) {
             this.#value = value
+            this.#multiple = value && typeof value === 'object'
             this.#interaction++
         }
     }
 
     set parent(value) {
-        if (this.#parent === undefined) {
+        if (!this.#parent) {
             this.#parent = value
             this.#interaction++
         }
@@ -86,109 +104,17 @@ class Entity {
         }
     }
 
-    save() {
-        if (!this.#id && this.#deleted) {
-            return
-        }
-        const interaction = this.#interaction
-        setTimeout(async () => {
-            if (interaction === this.#interaction) {
-                this.#updated = Calendar.timestamp()
-                const connection = IndexedDataBase.from('integrity')
-                const transaction = await connection.transaction('storage', true)
-                const storage = transaction.storage('storage')
-                const payload = {
-                    key: this.#key,
-                    type: null,
-                    value: this.#deleted ? null : this.#value,
-                    parent: this.#parent,
-                    updated: this.#updated,
-                    deleted: this.#deleted,
-                }
-                if (this.#id) {
-                    payload.id = this.#id
-                    await storage.put(payload)
-                } else {
-                    this.#id = await storage.add(payload)
-                }
-                transaction.commit()
-            }
-        }, 10)
-    }
-}
-
-export class Integrity {
-
-    /**
-     * @var {number}
-     */
-    #id
-
-    /**
-     * @var {array}
-     */
-    #entities
-
-    /**
-     * @var {IndexedDataBase}
-     */
-    static #connection
-
-    /**
-     * @var {IndexedDataBaseTransaction}
-     */
-    #transaction
-
-    /**
-     * @param {boolean} write
-     * @returns {IndexedDataBaseObjectStore}
-     */
-    async #storage(write = true) {
-        if (!Integrity.#connection) {
-            Integrity.#connection = IndexedDataBase.from('integrity')
-        }
-        if (
-            !this.#transaction
-            || this.#transaction.done
-            || (write && this.#transaction.mode !== 'readwrite')
-        ) {
-            this.#transaction = await Integrity.#connection.transaction('storage', write)
-        }
-        return this.#transaction.storage('storage')
-    }
-
-    /**
-     * @returns {Promise<Proxy>}
-     */
-    static async base() {
-        const target = new Integrity()
-        const instance = new Proxy(target, handler)
-        await target.load()
-        return instance
-    }
-
-    constructor(id = 0) {
-        this.#id = id
-        this.#entities = []
-    }
-
     async load() {
-        const storage = await this.#storage(false)
-        const index = storage.index('parent')
-        const payloads = await index.all(this.#id)
-        for (let payload of payloads) {
-            if (payload.type === 'array') {
-                this.#entities[payload.key] = new Integrity(payload.id)
-            } else {
-                let entity = new Entity(payload)
-                if (this.#entities[entity.key]) {
-                    if (!entity.deleted) {
-                        entity.deleted = true
-                        entity.save()
-                    }
-                } else {
-                    this.#entities[entity.key] = entity
-                }
+        if (this.#multiple) {
+            this.#value = []
+            const connection = IndexedDataBase.from('integrity')
+            const transaction = await connection.transaction('storage', false)
+            const storage = transaction.storage('storage')
+            const index = storage.index('parent')
+            const payloads = await index.all(this.#id)
+            for (let payload of payloads) {
+                let entity = new Integrity(payload)
+                this.#value[entity.key] = entity
             }
         }
         return this
@@ -203,19 +129,19 @@ export class Integrity {
         if (typeof value === 'function') {
             throw new Error('invalid media type')
         }
-        if (this.#entities[key]) {
-            const entity = this.#entities[key]
-            if (entity.value !== value || entity.deleted) {
+        if (this.#value.hasOwnProperty(key)) {
+            const entity = this.#value[key]
+            if (entity.deleted || entity.value !== value) {
                 entity.value = value
                 entity.deleted = false
                 entity.save()
             }
         } else {
-            const entity = new Entity()
+            const entity = new Integrity()
             entity.key = key
             entity.value = value
             entity.parent = this.#id
-            this.#entities[key] = entity
+            this.#value[key] = entity
             entity.save()
         }
     }
@@ -225,19 +151,18 @@ export class Integrity {
      * @returns {boolean|number|string|Promise<Proxy>}
      */
     getValue(key) {
-        if (this.#entities[key]) {
-            const entity = this.#entities[key]
-            if (entity instanceof Entity) {
-                return entity.value
-            } else {
-                return new Promise(async resolve => {
-                    if (entity instanceof Integrity) {
-                        await entity.load()
-                        resolve(new Proxy(entity, handler))
-                    } else {
-                        resolve(entity)
-                    }
-                })
+        if (this.#value.hasOwnProperty(key)) {
+            const entity = this.#value[key]
+            if (!entity.deleted) {
+                if (entity.multiple) {
+                    return new Promise(async resolve => {
+                        const instance = new Integrity(entity)
+                        await instance.load()
+                        resolve(new Proxy(instance, handler))
+                    })
+                } else {
+                    return entity.value
+                }
             }
         }
         return undefined
@@ -248,11 +173,142 @@ export class Integrity {
      * @returns {void}
      */
     delete(key) {
-        if (this.#entities[key]) {
-            const entity = this.#entities[key]
+        if (this.#value.hasOwnProperty(key)) {
+            const entity = this.#value[key]
             if (!entity.deleted) {
                 entity.deleted = true
                 entity.save()
+            }
+        }
+    }
+
+    save() {
+        if (!this.#id && this.#deleted) {
+            return
+        }
+        if (typeof this.#value === 'function') {
+            return
+        }
+        const interaction = this.#interaction
+        setTimeout(async () => {
+            if (interaction === this.#interaction) {
+                this.#updated = Calendar.timestamp()
+                const connection = IndexedDataBase.from('integrity')
+                const transaction = await connection.transaction('storage', true)
+                const storage = transaction.storage('storage')
+                if (this.#id) {
+                    const index = storage.index('parent')
+                    if (this.#deleted) {
+                        await this.#delete(storage, index, {
+                            id: this.#id,
+                            key: this.#key,
+                            parent: this.#parent,
+                            multiple: this.#multiple,
+                        })
+                        this.#value = null
+                    } else {
+                        await this.#put(storage, index, {
+                            id: this.#id,
+                            key: this.#key,
+                            value: this.#value,
+                            parent: this.#parent,
+                            multiple: this.#multiple,
+                        })
+                    }
+                } else {
+                    this.#id = await this.#add(storage, {
+                        key: this.#key,
+                        value: this.#value,
+                        parent: this.#parent,
+                        multiple: this.#multiple,
+                    })
+                }
+                transaction.commit()
+                if (this.#multiple && typeof this.#value === 'object') {
+                    this.#value = null
+                }
+            }
+        }, 10)
+    }
+
+    async #add(storage, payload) {
+        payload.deleted = false
+        payload.updated = this.#updated
+        if (payload.multiple) {
+            const values = payload.value
+            payload.value = null
+            const id = await storage.add(payload)
+            for (let key in values) {
+                let value = values[key]
+                await this.#add(storage, {
+                    key: key,
+                    value: value,
+                    parent: id,
+                    multiple: value && typeof value === 'object',
+                })
+            }
+            return id
+        } else {
+            return await storage.add(payload)
+        }
+    }
+
+    async #put(storage, index, payload) {
+        if (payload.id) {
+            payload.deleted = false
+            payload.updated = this.#updated
+            if (payload.multiple) {
+                const values = payload.value
+                payload.value = null
+                await storage.put(payload)
+                const payloads = await index.all(payload.id)
+                for (let payload of payloads) {
+                    if (values.hasOwnProperty(payload.key)) {
+                        let value = values[payload.key]
+                        if (payload.deleted || payload.value !== value) {
+                            payload.value = value
+                            payload.multiple = value && typeof value === 'object'
+                            await this.#put(storage, index, payload)
+                        }
+                        delete values[payload.key]
+                    } else if (!payload.deleted || payload.value !== null) {
+                        await this.#delete(storage, index, payload)
+                    }
+                }
+                for (let key in values) {
+                    let value = values[payload.key]
+                    await this.#add(storage, {
+                        key: key,
+                        value: value,
+                        parent: payload.id,
+                        deleted: false,
+                        updated: this.#updated,
+                        multiple: value && typeof value === 'object',
+                    })
+                }
+            } else {
+                await storage.put(payload)
+                const payloads = await index.all(payload.id)
+                for (let payload of payloads) {
+                    if (!payload.deleted || payload.value !== null) {
+                        await this.#delete(storage, index, payload)
+                    }
+                }
+            }
+        }
+    }
+
+    async #delete(storage, index, payload) {
+        if (payload.id) {
+            payload.value = null
+            payload.deleted = true
+            payload.updated = this.#updated
+            await storage.put(payload)
+            const payloads = await index.all(payload.id)
+            for (let payload of payloads) {
+                if (!payload.deleted || payload.value !== null) {
+                    await this.#delete(storage, index, payload)
+                }
             }
         }
     }

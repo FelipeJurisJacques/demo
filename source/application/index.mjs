@@ -12,12 +12,13 @@ import { Integrity } from "./models/Integrity.mjs";
 Integrity.base().then(async data => {
     data.teste = 5
     data.teste_1 = 'testando'
-    data.teste_2 = 3
-    delete data.teste_2
-    data.teste_2 = 4
-    // data.teste_2 = [1, 2, 3,]
+    // data.teste_2 = 3
+    // data.teste_2 = 4
+    data.teste_2 = [1, 2, 3,]
+    // data.teste_2 = [1,2]
+    // delete data.teste_2
     console.log(data)
-    // console.log(await data.teste_2)
+    console.log(await data.teste_2)
 }).catch(event => {
     console.error(event)
 })
