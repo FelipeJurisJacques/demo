@@ -276,7 +276,7 @@ export class Integrity {
                     }
                 }
                 for (let key in values) {
-                    let value = values[payload.key]
+                    let value = values[key]
                     await this.#add(storage, {
                         key: key,
                         value: value,
