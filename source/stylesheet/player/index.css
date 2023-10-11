@@ -73,22 +73,41 @@ header div.background div.part2 {
 
 div.container div.background div.part1 {
     background: #009FD6;
-    clip-path: polygon(0px 40%,
-            0px 60%,
-            36px calc(60% + 48px),
-            36px 80%,
-            0px calc(80% + 48px),
-            0px calc(100% - 5px),
-            5px 100%,
-            62px 100%,
-            62px calc(100% - 2px),
-            5px calc(100% - 2px),
-            2px calc(100% - 5px),
-            2px calc(80% + 48px),
-            38px 80%,
-            38px calc(60% + 48px),
-            2px 60%,
-            2px 40%);
+}
+
+@media screen and (min-height: 480px) {
+    div.container div.background div.part1 {
+        clip-path: polygon(0px 40%,
+                0px 60%,
+                36px calc(60% + 48px),
+                36px 80%,
+                0px calc(80% + 48px),
+                0px calc(100% - 5px),
+                5px 100%,
+                62px 100%,
+                62px calc(100% - 2px),
+                5px calc(100% - 2px),
+                2px calc(100% - 5px),
+                2px calc(80% + 48px),
+                38px 80%,
+                38px calc(60% + 48px),
+                2px 60%,
+                2px 40%);
+    }
+}
+@media screen and (max-height: 480px) {
+    div.container div.background div.part1 {
+        clip-path: polygon(0px 40%,
+                0px 60%,
+                0px calc(100% - 5px),
+                5px 100%,
+                62px 100%,
+                62px calc(100% - 2px),
+                5px calc(100% - 2px),
+                2px calc(100% - 5px),
+                2px 60%,
+                2px 40%);
+    }
 }
 
 footer div.background div.part1 {

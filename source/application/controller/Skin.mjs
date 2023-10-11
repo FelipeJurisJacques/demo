@@ -67,6 +67,7 @@ const element = document.body.querySelector('canvas#skin')
 const ctx = element.getContext('2d')
 ctx.lineWidth = 3
 ctx.beginPath()
+ctx.fillStyle = "rgb(200,0,0)"
 // ctx.moveTo(0, 0)
 // ctx.lineTo(200, 100)
 const rotate = Math.PI / 50
