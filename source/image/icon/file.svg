@@ -1,0 +1,10 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    xml:space="preserve"
+    width="30px" height="30px"
+    viewBox="0 0 100 100"
+    zoomAndPan="enable"
+>
+    <polygon fill="silver" points="60,0 10,0 10,100 90,100 90,30 80,30 80,90 20,90 20,10 60,10"/>
+    <polygon fill="silver" points="60,0 60,30 90,30"/>
+</svg>
