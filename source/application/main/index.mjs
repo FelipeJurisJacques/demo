@@ -9,23 +9,12 @@ player.subscribe(event => {
         iframe.setAttribute('frameborder', 2)
         iframe.src = event.target.getAttribute('src')
         document.body.appendChild(iframe)
-        iframe.addEventListener('mousedown', e => {
-            isResizing = true
-            console.log('aki')
-        })
-        window.addEventListener('mousemove', e => {
-            if (!isResizing) {
-                return
-            }
-            let newWidth = e.clientX - iframe.offsetLeft
-            let newHeight = e.clientY - iframe.offsetTop
-            iframe.style.width = newWidth + 'px'
-            iframe.style.height = newHeight + 'px'
-        })
+
         
-        window.addEventListener('mouseup', e => {
-            isResizing = false
-        })
+        // let newWidth = e.clientX - iframe.offsetLeft
+        // let newHeight = e.clientY - iframe.offsetTop
+        // iframe.style.width = newWidth + 'px'
+        // iframe.style.height = newHeight + 'px'
     }
 })
 
