@@ -110,17 +110,13 @@ export class Pointer {
                     this.#grab = true
                 }
                 break
-            default:
-                console.log(event.type)
-                if (this.#grab || this.#move) {
+            case 'pointerout':
+            case 'pointerover':
+                if (this.#grab) {
                     this.#grab = false
-                    this.#move = false
                 }
-                if (!this.#up || this.#down || this.#click) {
-                    this.#up = true
-                    this.#down = false
-                    this.#click = false
-                }
+                break
+            default:
                 break
         }
         if (event.buttons && event.buttons === 0) {
@@ -131,5 +127,23 @@ export class Pointer {
                 this.#click = false
             }
         }
+    }
+
+    static state(event) {
+        this.capture(event)
+        const result = {
+            x: this.#x,
+            y: this.#y,
+            up: this.#up,
+            out: event.type === 'pointerout',
+            down: this.#down,
+            move: this.#move,
+            grab: this.#grab,
+            over: event.type === 'pointerover',
+            touch: this.#touch,
+            mouse: this.#mouse,
+            click: this.#click,
+        }
+        return result
     }
 }

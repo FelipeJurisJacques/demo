@@ -21,16 +21,16 @@ HTMLElement.prototype.unsubscribe = function (observer) {
 
 // OBSERVER
 function pointer(event) {
-    Pointer.capture(event)
     if (event.target && event.target.notify) {
         event.target.notify(event)
         event.target.notify({
             type: 'pointer',
             target: event.target,
-            pointer: Pointer,
+            pointer: Pointer.state(event),
         })
     }
 }
+window.addEventListener('click', pointer)
 window.addEventListener('pointerup', pointer)
 window.addEventListener('pointerout', pointer)
 window.addEventListener('pointerover', pointer)
