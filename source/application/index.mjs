@@ -1,16 +1,9 @@
 import { } from "./kernels/Base.mjs"
+import { Footer } from "./widget/Footer.mjs"
 
 document.build({
     tag: 'body',
     children: [
-        {
-            tag: 'footer',
-            children: [
-                {
-                    tag: 'button',
-                    content: 'Player',
-                },
-            ],
-        },
+        Footer(),
     ],
 })

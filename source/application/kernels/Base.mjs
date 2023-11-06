@@ -43,29 +43,37 @@ window.addEventListener('pointercancel', pointer)
 // window.addEventListener('lostpointercapture', pointer)
 
 Document.prototype.build = function (widget = {}) {
+    if (widget instanceof HTMLElement) {
+        return widget
+    }
     const element = widget.tag === 'body' ? this.body : this.createElement(widget.tag)
-    switch (widget.tag) {
-        case 'button':
-            element.type = widget.type ? widget.type : 'button'
-            break
-        default:
-            break
-    }
-    if (widget.id) {
-        element.id = widget.id
-    }
-    if (widget.class) {
-        element.className = widget.class
-    }
-    if (widget.content) {
-        element.innerText = widget.content
-    }
-    if (widget.child) {
-        element.appendChild(this.build(widget.child))
-    }
-    if (widget.children) {
-        for (let child of widget.children) {
-            element.appendChild(this.build(child))
+    for (let name in widget) {
+        switch (name) {
+            case 'tag':
+                break
+            case 'id':
+            case 'src':
+            case 'type':
+            case 'width':
+            case 'height':
+                element[name] = widget[name]
+                break
+            case 'class':
+                element.className = widget.class
+                break
+            case 'content':
+                element.innerText = widget.content
+                break
+            case 'child':
+                element.appendChild(this.build(widget.child))
+                break
+            case 'children':
+                for (let child of widget.children) {
+                    element.appendChild(this.build(child))
+                }
+            default:
+                element.setAttribute(name, widget[name])
+                break
         }
     }
     return element
