@@ -26,61 +26,47 @@ function pointer(event) {
         event.target.notify({
             type: 'pointer',
             target: event.target,
-            pointer: Pointer.state(event),
+            pointer: new Pointer(event),
         })
     }
 }
 window.addEventListener('click', pointer)
 window.addEventListener('pointerup', pointer)
-window.addEventListener('pointerout', pointer)
-window.addEventListener('pointerover', pointer)
+window.addEventListener('pointerout', pointer) // diretamente ao elemento
+window.addEventListener('pointerover', pointer) // diretamente ao elemento
 window.addEventListener('pointerdown', pointer)
 window.addEventListener('pointermove', pointer)
-window.addEventListener('pointerenter', pointer)
-window.addEventListener('pointerleave', pointer)
+window.addEventListener('pointerenter', pointer) // considera elementos filhos
+window.addEventListener('pointerleave', pointer) // considera elementos filhos
 window.addEventListener('pointercancel', pointer)
-window.addEventListener('gotpointercapture', pointer)
-window.addEventListener('lostpointercapture', pointer)
-// Pointer.x = event.clientX
-// Pointer.y = event.clientY
-// Pointer.grab = event.buttons > 0
-// Pointer.type = event.pointerType
-// console.log(Pointer.grab)
-// if (event.target && event.target.notify) {
-//     event.target.notify(event)
-// }
-// Pointer.down = true
-// if (event.target && event.target.notify) {
-//     event.target.notify(event)
-//     if (Pointer.touch) {
-//         const uuid = event.timeStamp
-//         Mouse.down = uuid
-//         setTimeout(() => {
-//             if (Pointer.down && Mouse.down === uuid) {
-//                 const e = {}
-//                 for (let key in event) {
-//                     e[key] = event[key]
-//                 }
-//                 e.type = 'longclick'
-//                 event.target.notify(e)
-//             }
-//         }, 500)
-//     }
-// }
-// if (event.target && event.target.notify) {
-//     Pointer.up = true
-//     Pointer.grab = false
-//     event.target.notify(event)
-//     const uuid = event.timeStamp
-//     Mouse.up = uuid
-//     setTimeout(() => {
-//         if (Pointer.up && Mouse.up !== uuid) {
-//             const e = {}
-//             for (let key in event) {
-//                 e[key] = event[key]
-//             }
-//             e.type = 'doubleclick'
-//             event.target.notify(e)
-//         }
-//     }, 200)
-// }
+// window.addEventListener('gotpointercapture', pointer)
+// window.addEventListener('lostpointercapture', pointer)
+
+Document.prototype.build = function (widget = {}) {
+    const element = widget.tag === 'body' ? this.body : this.createElement(widget.tag)
+    switch (widget.tag) {
+        case 'button':
+            element.type = widget.type ? widget.type : 'button'
+            break
+        default:
+            break
+    }
+    if (widget.id) {
+        element.id = widget.id
+    }
+    if (widget.class) {
+        element.className = widget.class
+    }
+    if (widget.content) {
+        element.innerText = widget.content
+    }
+    if (widget.child) {
+        element.appendChild(this.build(widget.child))
+    }
+    if (widget.children) {
+        for (let child of widget.children) {
+            element.appendChild(this.build(child))
+        }
+    }
+    return element
+}

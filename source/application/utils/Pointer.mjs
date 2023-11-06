@@ -8,41 +8,85 @@ export class Pointer {
     static #touch = false
     static #mouse = false
     static #click = false
+    #out
+    #over
+    #enter
+    #leave
 
-    static get x() {
-        return this.#x
+    constructor(event) {
+        Pointer.capture(event)
+        this.#out = false
+        this.#over = false
+        this.#enter = false
+        this.#leave = false
+        switch (event.type) {
+            case 'pointerout':
+                this.#out = true
+                break
+            case 'pointerover':
+                this.#over = true
+                break
+            case 'pointerenter':
+                this.#enter = true
+                break
+            case 'pointerleave':
+                this.#leave = true
+                break
+            default:
+                break
+        }
     }
 
-    static get y() {
-        return this.#y
+    get x() {
+        return Pointer.#x
     }
 
-    static get up() {
-        return this.#up
+    get y() {
+        return Pointer.#y
     }
 
-    static get down() {
-        return this.#down
+    get up() {
+        return Pointer.#up
     }
 
-    static get move() {
-        return this.#move
+    get down() {
+        return Pointer.#down
     }
 
-    static get grab() {
-        return this.#grab
+    get move() {
+        return Pointer.#move
     }
 
-    static get touch() {
-        return this.#touch
+    get grab() {
+        return Pointer.#grab
     }
 
-    static get mouse() {
-        return this.#mouse
+    get touch() {
+        return Pointer.#touch
     }
 
-    static get click() {
-        return this.#click
+    get mouse() {
+        return Pointer.#mouse
+    }
+
+    get click() {
+        return Pointer.#click
+    }
+
+    get out() {
+        return this.#out
+    }
+
+    get over() {
+        return this.#over
+    }
+
+    get enter() {
+        return this.#enter
+    }
+
+    get leave() {
+        return this.#leave
     }
 
     static capture(event) {
@@ -127,23 +171,5 @@ export class Pointer {
                 this.#click = false
             }
         }
-    }
-
-    static state(event) {
-        this.capture(event)
-        const result = {
-            x: this.#x,
-            y: this.#y,
-            up: this.#up,
-            out: event.type === 'pointerout',
-            down: this.#down,
-            move: this.#move,
-            grab: this.#grab,
-            over: event.type === 'pointerover',
-            touch: this.#touch,
-            mouse: this.#mouse,
-            click: this.#click,
-        }
-        return result
     }
 }
