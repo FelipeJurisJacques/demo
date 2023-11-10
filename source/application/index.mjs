@@ -1,9 +1,9 @@
 import { } from "./kernels/Base.mjs"
-import { Footer } from "./widget/Footer.mjs"
+import { Bar } from "./widget/Bar.mjs"
+import { Body } from "./widget/Elements.mjs"
 
-document.build({
-    tag: 'body',
+Body({
     children: [
-        Footer(),
+        Bar(),
     ],
 })

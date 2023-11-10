@@ -71,6 +71,7 @@ Document.prototype.build = function (widget = {}) {
                 for (let child of widget.children) {
                     element.appendChild(this.build(child))
                 }
+                break
             default:
                 element.setAttribute(name, widget[name])
                 break

@@ -7,7 +7,7 @@ iframe {
     height: 70vh;
 }
 
-footer {
+footer.main {
     clip-path: polygon(0% 10%,
             5% 10%,
             6% 0%,
