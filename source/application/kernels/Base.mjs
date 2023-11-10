@@ -62,10 +62,30 @@ Document.prototype.build = function (widget = {}) {
                 element.className = widget.class
                 break
             case 'content':
-                element.innerText = widget.content
+                if (typeof widget.content === 'object') {
+                    if (widget.content instanceof URL) {
+                        fetch(widget.content).then(response => {
+                            response.text().then(body => {
+                                element.innerText = body
+                            })
+                        })
+                    }
+                } else {
+                    element.innerText = widget.content
+                }
                 break
             case 'child':
-                element.appendChild(this.build(widget.child))
+                if (typeof widget.child === 'object') {
+                    if (widget.child instanceof URL) {
+                        fetch(widget.child).then(response => {
+                            response.text().then(body => {
+                                element.innerHTML = body
+                            })
+                        })
+                    }
+                } else {
+                    element.appendChild(this.build(widget.child))
+                }
                 break
             case 'children':
                 for (let child of widget.children) {

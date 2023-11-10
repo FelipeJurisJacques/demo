@@ -3,7 +3,7 @@ import { Button, Footer } from "./Elements.mjs"
 
 export function Bar() {
     const player = Button({
-        content: 'Player',
+        child: new URL('/source/image/icon/player.svg', location.origin),
     })
     player.subscribe(event => {
         if (event.type === 'pointer' && event.pointer.click) {

@@ -35,6 +35,9 @@ export function P(widget = {}) {
 
 export function Button(widget = {}) {
     widget.tag = 'button'
+    if (!widget.type) {
+        widget.type = 'button'
+    }
     return window.document.build(widget)
 }
 
