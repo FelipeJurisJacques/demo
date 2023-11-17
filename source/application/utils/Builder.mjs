@@ -77,22 +77,31 @@ HTMLElement.prototype.rebuild = function (widget = {}) {
 }
 
 // SUBJECT
-HTMLElement.prototype.notify = function (event) {
+function notify(event) {
     if (this.subject) {
         this.subject.notify(event)
     }
+    if (this.parentElement && this.parentElement.notify) {
+        this.parentElement.notify(event)
+    }
 }
-HTMLElement.prototype.subscribe = function (observer) {
+function subscribe(observer) {
     if (!this.subject) {
         this.subject = new Subject()
     }
     this.subject.subscribe(observer)
 }
-HTMLElement.prototype.unsubscribe = function (observer) {
+function unsubscribe(observer) {
     if (this.subject) {
         this.subject.unsubscribe(observer)
     }
 }
+SVGElement.prototype.notify = notify
+HTMLElement.prototype.notify = notify
+SVGElement.prototype.subscribe = subscribe
+HTMLElement.prototype.subscribe = subscribe
+SVGElement.prototype.unsubscribe = unsubscribe
+HTMLElement.prototype.unsubscribe = unsubscribe
 
 // OBSERVER
 function observer(event) {
@@ -101,7 +110,6 @@ function observer(event) {
     }
 }
 function pointer(event) {
-    console.log(event.type)
     if (event.target && event.target.notify) {
         event.target.notify(event)
         event.target.notify({
@@ -120,5 +128,5 @@ window.addEventListener('pointermove', pointer)
 window.addEventListener('pointerenter', pointer) // considera elementos filhos
 window.addEventListener('pointerleave', pointer) // considera elementos filhos
 window.addEventListener('pointercancel', pointer)
-// window.addEventListener('gotpointercapture', pointer)
-// window.addEventListener('lostpointercapture', pointer)
+window.addEventListener('gotpointercapture', pointer)
+window.addEventListener('lostpointercapture', pointer)

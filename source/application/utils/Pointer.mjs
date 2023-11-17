@@ -7,9 +7,9 @@ export class Pointer {
     static #grab = false
     static #touch = false
     static #mouse = false
-    static #click = false
     #out
     #over
+    #click
     #enter
     #leave
 
@@ -17,9 +17,13 @@ export class Pointer {
         Pointer.capture(event)
         this.#out = false
         this.#over = false
+        this.#click = false
         this.#enter = false
         this.#leave = false
         switch (event.type) {
+            case 'pointerup':
+                this.#click = true
+                break
             case 'pointerout':
                 this.#out = true
                 break
@@ -70,7 +74,7 @@ export class Pointer {
     }
 
     get click() {
-        return Pointer.#click
+        return this.#click
     }
 
     get out() {
@@ -111,14 +115,8 @@ export class Pointer {
                     break
             }
         }
-        console.log(event.type)
         switch (event.type) {
             case 'click':
-                if (!this.#click) {
-                    this.#up = false
-                    this.#down = false
-                    this.#click = true
-                }
                 if (this.#grab || this.#move) {
                     this.#move = false
                     this.#grab = false
@@ -128,7 +126,6 @@ export class Pointer {
                 if (!this.#up) {
                     this.#up = true
                     this.#down = false
-                    this.#click = false
                 }
                 if (this.#grab) {
                     this.#grab = false
@@ -138,7 +135,6 @@ export class Pointer {
                 if (!this.#down) {
                     this.#up = false
                     this.#down = true
-                    this.#click = false
                 }
                 if (this.#grab) {
                     this.#grab = false
@@ -147,9 +143,6 @@ export class Pointer {
             case 'pointermove':
                 if (!this.#move) {
                     this.#move = true
-                }
-                if (this.#click) {
-                    this.#click = false
                 }
                 if (this.#down && !this.#grab) {
                     this.#grab = true
@@ -165,11 +158,10 @@ export class Pointer {
                 break
         }
         if (event.buttons && event.buttons === 0) {
-            if (!this.#up || this.#down || this.#grab || this.#click) {
+            if (!this.#up || this.#down || this.#grab) {
                 this.#up = true
                 this.#down = false
                 this.#grab = false
-                this.#click = false
             }
         }
     }
