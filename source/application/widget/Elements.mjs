@@ -45,3 +45,13 @@ export function Body(widget = {}) {
     widget.tag = 'body'
     return window.document.build(widget)
 }
+
+export function Head(widget = {}) {
+    widget.tag = 'head'
+    return window.document.build(widget)
+}
+
+export function Link(widget = {}) {
+    widget.tag = 'link'
+    return window.document.build(widget)
+}

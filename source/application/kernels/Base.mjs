@@ -46,7 +46,18 @@ Document.prototype.build = function (widget = {}) {
     if (widget instanceof HTMLElement) {
         return widget
     }
-    const element = widget.tag === 'body' ? this.body : this.createElement(widget.tag)
+    let element
+    switch (widget.tag) {
+        case 'body':
+            element = this.body
+            break
+        case 'head':
+            element = this.head
+            break
+        default:
+            element = this.createElement(widget.tag)
+            break
+    }
     for (let name in widget) {
         switch (name) {
             case 'tag':

@@ -4,6 +4,7 @@ import { Button, Footer } from "./Elements.mjs"
 export function Bar() {
     const player = Button({
         child: new URL('/source/image/icon/player.svg', location.origin),
+        title: 'Player',
     })
     player.subscribe(event => {
         if (event.type === 'pointer' && event.pointer.click) {
@@ -11,7 +12,7 @@ export function Bar() {
         }
     })
     return Footer({
-        class: 'main',
+        class: 'bar',
         children: [
             player,
         ],

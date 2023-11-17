@@ -1,13 +1,11 @@
-body {
-    background-color: black;
-}
-
-iframe {
-    width: 70vw;
-    height: 70vh;
-}
-
-footer.main {
+footer.bar {
+    width: 100%;
+    height: 100px;
+    bottom: 0px;
+    display: flex;
+    position: absolute;
+    align-items: center;
+    justify-content: center;
     clip-path: polygon(0% 10%,
             5% 10%,
             6% 0%,
@@ -24,15 +22,17 @@ footer.main {
             26% 100%,
             25% 90%,
             0% 90%);
-    background-size: inherit;
-    background-position: center center;
-    background-repeat: no-repeat;
-    /* background-attachment: fixed; */
     background: #009FD6;
-    height: 100px;
-    width: 100%;
-    bottom: 0px;
-    position: absolute;
+    background-size: inherit;
+    background-repeat: no-repeat;
+    background-position: center center;
+    /* background-attachment: fixed; */
+}
+
+footer.bar button {
+    border: 0;
+    border-color: transparent;
+    background-color: transparent;
 }
 
 canvas#skin {
