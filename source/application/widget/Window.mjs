@@ -1,6 +1,6 @@
 import { Div, Footer, Header } from "./Elements.mjs";
 
-export function Window(header = [], content = []) {
+export function Window(header = [], content = [], footer = []) {
     return document.build(Div({
         class: 'window',
         children: [
@@ -52,6 +52,7 @@ export function Window(header = [], content = []) {
                     }),
                     Div({
                         class: 'content',
+                        children: footer,
                     }),
                 ],
             }),

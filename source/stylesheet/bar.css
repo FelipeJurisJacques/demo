@@ -4,8 +4,6 @@ footer.bar {
     bottom: 0px;
     display: flex;
     position: absolute;
-    align-items: center;
-    justify-content: center;
     clip-path: polygon(0% 10%,
             5% 10%,
             6% 0%,
@@ -23,7 +21,9 @@ footer.bar {
             25% 90%,
             0% 90%);
     background: #009FD6;
+    align-items: center;
     background-size: inherit;
+    justify-content: center;
     background-repeat: no-repeat;
     background-position: center center;
     /* background-attachment: fixed; */

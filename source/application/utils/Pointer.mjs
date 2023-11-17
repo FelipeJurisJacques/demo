@@ -111,6 +111,7 @@ export class Pointer {
                     break
             }
         }
+        console.log(event.type)
         switch (event.type) {
             case 'click':
                 if (!this.#click) {

@@ -1,8 +1,8 @@
 import { } from "./kernels/Base.mjs"
 import { Bar } from "./widget/Bar.mjs"
-import { Body } from "./widget/Elements.mjs"
+import { Builder } from "./utils/Builder.mjs"
 
-Body({
+Builder.body({
     children: [
         Bar(),
     ],
