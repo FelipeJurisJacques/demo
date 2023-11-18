@@ -1,56 +1,127 @@
-div.windows {
-    z-index: 1;
-}
-
 div.window {
     top: 0px;
     left: 0px;
-    width: 70vw;
+    width: 50vw;
     height: 70vh;
-    display: grid;
+    /* display: grid; */
+    display: flex;
     z-index: 1;
-    position: absolute;
+    position: fixed;
     column-gap: 100%;
+    flex-direction: column;
+    background-color: black;
     grid-template-rows: 120px auto 85px;
-    background: black;
 }
 
-div.window div.header {
-    background-size: 100% 100%;
-    background-image: url(../image/background/window_header.svg);
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    /* background: #009FD6;
-    clip-path: polygon(48px 0px,
-            calc(100% - 7px) 0px,
-            100% 7px,
-            100% calc(100% - 7px),
-            calc(100% - 7px) 100%,
-            7px 100%,
-            0px calc(100% - 7px),
-            0px 48px); */
+div.window div.background *,
+div.window div.content {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    position: absolute;
+    /* flex: 1; */
+    /* display: flex; */
+    /* flex-grow: 1; */
+    /* flex-direction: column; */
 }
 
-div.window div.body {
-    background-size: 100% 100%;
-    background-image: url(../image/background/window_body.svg);
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    /* background: #009FD6; */
-    /* clip-path: polygon(10px 10px,
-            10px 50%,
-            20px 50%,
-            20px 10px); */
+div.window header {
+    position: relative;
+    min-height: 70px;
+    margin-bottom: 10px;
 }
 
-div.window div.footer {
+div.window header div.background div.part1 {
+    background: #B3B3B3;
+    clip-path: polygon(0px 0px,
+            24px 0px,
+            0px 24px);
+}
+
+div.window header div.background div.part2 {
     background: #009FD6;
-    clip-path: polygon(7px 0px,
-            calc(100% - 7px) 0px,
-            100% 7px,
-            100% calc(100% - 48px),
-            calc(100% - 48px) 100%,
-            7px 100%,
-            0px calc(100% - 7px),
-            0px 7px);
+    clip-path: polygon(48px 0px,
+            calc(100% - 3px) 0px,
+            100% 3px,
+            100% calc(100% - 3px),
+            calc(100% - 3px) 100%,
+            3px 100%,
+            0px calc(100% - 3px),
+            0px 48px);
+}
+
+div.window div.container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    min-height: 200px;
+}
+
+div.window div.container div.background div.part1 {
+    background: #009FD6;
+}
+
+@media screen and (min-height: 480px) {
+    div.window div.container div.background div.part1 {
+        clip-path: polygon(0px 40%,
+                0px 60%,
+                36px calc(60% + 48px),
+                36px 80%,
+                0px calc(80% + 48px),
+                0px calc(100% - 5px),
+                5px 100%,
+                62px 100%,
+                62px calc(100% - 2px),
+                5px calc(100% - 2px),
+                2px calc(100% - 5px),
+                2px calc(80% + 48px),
+                38px 80%,
+                38px calc(60% + 48px),
+                2px 60%,
+                2px 40%);
+    }
+}
+
+@media screen and (max-height: 480px) {
+    div.window div.container div.background div.part1 {
+        clip-path: polygon(0px 40%,
+                0px 60%,
+                0px calc(100% - 5px),
+                5px 100%,
+                62px 100%,
+                62px calc(100% - 2px),
+                5px calc(100% - 2px),
+                2px calc(100% - 5px),
+                2px 60%,
+                2px 40%);
+    }
+}
+
+div.window footer {
+    height: 30px;
+    position: relative;
+    clip-path: polygon(2px 0px,
+            calc(100% - 2px) 0px,
+            100% 2px,
+            100% calc(100% - 23px),
+            calc(100% - 23px) 100%,
+            2px 100%,
+            0px calc(100% - 2px),
+            0px 2px);
+    background: #009FD6;
+    margin-top: 10px;
+}
+
+div.window footer div.background div.part1 {
+    background: #009FD6;
+    clip-path: polygon(3px 0px,
+            calc(100% - 3px) 0px,
+            100% 3px,
+            100% calc(100% - 20px),
+            calc(100% - 20px) 100%,
+            3px 100%,
+            0px calc(100% - 3px),
+            0px 3px);
 }

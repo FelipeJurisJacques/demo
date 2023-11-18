@@ -20,7 +20,7 @@ export function Window(header = [], content = [], footer = []) {
                     Div({
                         class: 'content',
                         children: header,
-                    })
+                    }),
                 ],
             }),
             Div({

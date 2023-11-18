@@ -51,21 +51,27 @@ HTMLElement.prototype.rebuild = function (widget = {}) {
                 }
                 break
             case 'child':
-                if (typeof widget.child === 'object') {
-                    if (widget.child instanceof URL) {
-                        fetch(widget.child).then(response => {
-                            response.text().then(body => {
-                                this.innerHTML = body
-                            })
+                if (typeof widget.child === 'object' && widget.child instanceof URL) {
+                    fetch(widget.child).then(response => {
+                        response.text().then(body => {
+                            this.innerHTML = body
                         })
-                    }
+                    })
                 } else {
                     this.appendChild(window.document.build(widget.child))
                 }
                 break
             case 'children':
                 for (let child of widget.children) {
-                    this.appendChild(window.document.build(child))
+                    if (typeof child === 'object' && child instanceof URL) {
+                        fetch(child).then(response => {
+                            response.text().then(body => {
+                                this.innerHTML = body
+                            })
+                        })
+                    } else {
+                        this.appendChild(window.document.build(child))
+                    }
                 }
                 break
             default:
@@ -76,7 +82,6 @@ HTMLElement.prototype.rebuild = function (widget = {}) {
     return this
 }
 
-// SUBJECT
 function notify(event) {
     if (this.subject) {
         this.subject.notify(event)
@@ -96,14 +101,6 @@ function unsubscribe(observer) {
         this.subject.unsubscribe(observer)
     }
 }
-SVGElement.prototype.notify = notify
-HTMLElement.prototype.notify = notify
-SVGElement.prototype.subscribe = subscribe
-HTMLElement.prototype.subscribe = subscribe
-SVGElement.prototype.unsubscribe = unsubscribe
-HTMLElement.prototype.unsubscribe = unsubscribe
-
-// OBSERVER
 function observer(event) {
     if (event.target && event.target.notify) {
         event.target.notify(event)
@@ -119,6 +116,16 @@ function pointer(event) {
         })
     }
 }
+
+// SUBJECT
+SVGElement.prototype.notify = notify
+HTMLElement.prototype.notify = notify
+SVGElement.prototype.subscribe = subscribe
+HTMLElement.prototype.subscribe = subscribe
+SVGElement.prototype.unsubscribe = unsubscribe
+HTMLElement.prototype.unsubscribe = unsubscribe
+
+// OBSERVER
 window.addEventListener('click', observer)
 window.addEventListener('pointerup', pointer)
 window.addEventListener('pointerout', pointer) // diretamente ao elemento
