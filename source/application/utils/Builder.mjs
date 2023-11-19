@@ -48,18 +48,35 @@ export class Builder {
                         this.#append(element, child)
                     }
                     break
+                case 'onAction':
+                    this.#subscribe('click')
+                    element.subjectAction = widget[name]
+                    break
+                case 'onTap':
+                    this.#subscribe('click')
+                    element.subjectTap = widget[name]
+                    break
                 case 'onClick':
                     this.#subscribe('click')
                     element.subjectClick = widget[name]
                     break
-                case 'onDoubleClick':
-                    this.#subscribe('click')
-                    element.subjectDoubleClick = widget[name]
+                case 'onLongTap':
+                    this.#subscribe('pointerup')
+                    this.#subscribe('pointerdown')
+                    element.subjectLongTap = widget[name]
                     break
                 case 'onLongClick':
                     this.#subscribe('pointerup')
                     this.#subscribe('pointerdown')
                     element.subjectLongClick = widget[name]
+                    break
+                case 'onDoubleTap':
+                    this.#subscribe('click')
+                    element.subjectDoubleClick = widget[name]
+                    break
+                case 'onDoubleClick':
+                    this.#subscribe('click')
+                    element.subjectDoubleClick = widget[name]
                     break
                 case 'onPointerUp':
                     this.#subscribe('pointerup')
@@ -153,16 +170,39 @@ export class Builder {
     static #forward(event, element) {
         switch (event.type) {
             case 'click':
-                if (element.subjectDoubleClick) {
-                    const diff = (new Date()).getTime() - this.#lastClick
-                    if (diff > 0 && diff < 200) {
-                        element.subjectDoubleClick(event)
-                    }
+                const diff = (new Date()).getTime() - this.#lastClick
+                const double = diff > 0 && diff < 200
+                if (double && element.subjectDoubleAction) {
+                    element.subjectDoubleAction(event)
                     return true
                 }
-                if (element.subjectClick) {
-                    element.subjectClick(event)
+                if (element.subjectAction) {
+                    element.subjectAction(event)
                     return true
+                }
+                switch (event.pointerType) {
+                    case 'mouse':
+                        if (double && element.subjectDoubleClick) {
+                            element.subjectDoubleClick(event)
+                            return true
+                        }
+                        if (element.subjectClick) {
+                            element.subjectClick(event)
+                            return true
+                        }
+                        break
+                    case 'touch':
+                        if (double && element.subjectDoubleTap) {
+                            element.subjectDoubleTap(event)
+                            return true
+                        }
+                        if (element.subjectTap) {
+                            element.subjectTap(event)
+                            return true
+                        }
+                        break
+                    default:
+                        break
                 }
                 break
             case 'pointerup':
@@ -188,12 +228,35 @@ export class Builder {
                     element.subjectPointerDown(event)
                     return true
                 }
-                if (element.subjectLongClick) {
+                if (
+                    element.subjectLongAction
+                    || (element.subjectLongTap && event.pointerType === 'touch')
+                    || (element.subjectLongClick && event.pointerType === 'mouse')
+                ) {
                     setTimeout(() => {
                         if (this.#lastDown > this.#lastUp) {
                             const diff = (new Date()).getTime() - this.#lastDown
                             if (diff >= 500) {
-                                element.subjectLongClick(event)
+                                if (element.subjectLongAction) {
+                                    element.subjectLongAction(event)
+                                } else {
+                                    switch (event.pointerType) {
+                                        case 'mouse':
+                                            if (element.subjectLongClick) {
+                                                element.subjectLongClick(event)
+                                                return true
+                                            }
+                                            break
+                                        case 'touch':
+                                            if (element.subjectTap) {
+                                                element.subjectTap(event)
+                                                return true
+                                            }
+                                            break
+                                        default:
+                                            break
+                                    }
+                                }
                             }
                         }
                     }, 500)
@@ -236,59 +299,3 @@ Document.prototype.build = Builder.build
 HTMLElement.prototype.rebuild = function (widget = {}) {
     Builder.rebuild(this, widget)
 }
-
-function notify(event) {
-    if (this.subject) {
-        this.subject.notify(event)
-    }
-    if (this.parentElement && this.parentElement.notify) {
-        this.parentElement.notify(event)
-    }
-}
-function subscribe(observer) {
-    if (!this.subject) {
-        this.subject = new Subject()
-    }
-    this.subject.subscribe(observer)
-}
-function unsubscribe(observer) {
-    if (this.subject) {
-        this.subject.unsubscribe(observer)
-    }
-}
-function observer(event) {
-    if (event.target && event.target.notify) {
-        event.target.notify(event)
-    }
-}
-function pointer(event) {
-    if (event.target && event.target.notify) {
-        event.target.notify(event)
-        event.target.notify({
-            type: 'pointer',
-            target: event.target,
-            pointer: new Pointer(event),
-        })
-    }
-}
-
-// SUBJECT
-SVGElement.prototype.notify = notify
-HTMLElement.prototype.notify = notify
-SVGElement.prototype.subscribe = subscribe
-HTMLElement.prototype.subscribe = subscribe
-SVGElement.prototype.unsubscribe = unsubscribe
-HTMLElement.prototype.unsubscribe = unsubscribe
-
-// OBSERVER
-window.addEventListener('click', observer)
-window.addEventListener('pointerup', pointer)
-window.addEventListener('pointerout', pointer) // diretamente ao elemento
-window.addEventListener('pointerover', pointer) // diretamente ao elemento
-window.addEventListener('pointerdown', pointer)
-window.addEventListener('pointermove', pointer)
-window.addEventListener('pointerenter', pointer) // considera elementos filhos
-window.addEventListener('pointerleave', pointer) // considera elementos filhos
-window.addEventListener('pointercancel', pointer)
-window.addEventListener('gotpointercapture', pointer)
-window.addEventListener('lostpointercapture', pointer)
