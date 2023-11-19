@@ -3,83 +3,69 @@ import { Pointer } from "../utils/Pointer.mjs"
 
 export class Builder {
     static head(widget = {}) {
-        return window.document.head.rebuild(widget)
+        return this.rebuild(window.document.head, widget)
     }
 
     static body(widget = {}) {
-        return window.document.body.rebuild(widget)
+        return this.rebuild(window.document.body, widget)
     }
 
     static build(widget = {}) {
         if (widget instanceof HTMLElement) {
             return widget
         }
-        const element = window.document.createElement(widget.tag)
-        element.rebuild(widget)
+        return this.rebuild(window.document.createElement(widget.tag), widget)
+    }
+
+    static rebuild(element, widget) {
+        for (let name in widget) {
+            switch (name) {
+                case 'tag':
+                    break
+                case 'id':
+                case 'src':
+                case 'type':
+                case 'width':
+                case 'height':
+                    element[name] = widget[name]
+                    break
+                case 'class':
+                    element.className = widget.class
+                    break
+                case 'content':
+                    element.innerText = widget.content
+                    break
+                case 'child':
+                    this.#append(element, widget.child)
+                    break
+                case 'children':
+                    for (let child of widget.children) {
+                        this.#append(element, child)
+                    }
+                    break
+                default:
+                    element.setAttribute(name, widget[name])
+                    break
+            }
+        }
         return element
+    }
+
+    static #append(element, widget) {
+        if (typeof widget === 'object' && widget instanceof URL) {
+            fetch(widget).then(async response => {
+                element.innerHTML = await response.text()
+            })
+        } else {
+            element.appendChild(this.build(widget))
+        }
     }
 }
 
 // BUILDER
 Document.prototype.build = Builder.build
 HTMLElement.prototype.rebuild = function (widget = {}) {
-    for (let name in widget) {
-        switch (name) {
-            case 'tag':
-                break
-            case 'id':
-            case 'src':
-            case 'type':
-            case 'width':
-            case 'height':
-                this[name] = widget[name]
-                break
-            case 'class':
-                this.className = widget.class
-                break
-            case 'content':
-                if (typeof widget.content === 'object') {
-                    if (widget.content instanceof URL) {
-                        fetch(widget.content).then(response => {
-                            response.text().then(body => {
-                                this.innerText = body
-                            })
-                        })
-                    }
-                } else {
-                    this.innerText = widget.content
-                }
-                break
-            case 'child':
-                if (typeof widget.child === 'object' && widget.child instanceof URL) {
-                    fetch(widget.child).then(response => {
-                        response.text().then(body => {
-                            this.innerHTML = body
-                        })
-                    })
-                } else {
-                    this.appendChild(window.document.build(widget.child))
-                }
-                break
-            case 'children':
-                for (let child of widget.children) {
-                    if (typeof child === 'object' && child instanceof URL) {
-                        fetch(child).then(response => {
-                            response.text().then(body => {
-                                this.innerHTML = body
-                            })
-                        })
-                    } else {
-                        this.appendChild(window.document.build(child))
-                    }
-                }
-                break
-            default:
-                this.setAttribute(name, widget[name])
-                break
-        }
-    }
-    return this
+    Builder.rebuild(this, widget)
 }
 
 function notify(event) {
