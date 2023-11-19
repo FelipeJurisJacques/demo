@@ -9,7 +9,6 @@ export function Bar() {
                 child: new URL('/source/image/icon/player.svg', location.origin),
                 title: 'Player',
                 onAction: function (event) {
-                    console.log(event)
                     document.body.appendChild(Player())
                 },
             }),

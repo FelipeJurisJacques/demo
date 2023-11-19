@@ -52,27 +52,36 @@ export class Builder {
                     this.#subscribe('click')
                     element.subjectAction = widget[name]
                     break
+                case 'onLongAction':
+                    this.#subscribe('pointerup')
+                    this.#subscribe('pointerdown')
+                    element.subjectLongAction = widget[name]
+                    break
+                case 'onDoubleAction':
+                    this.#subscribe('click')
+                    element.subjectDoubleAction = widget[name]
+                    break
                 case 'onTap':
                     this.#subscribe('click')
                     element.subjectTap = widget[name]
-                    break
-                case 'onClick':
-                    this.#subscribe('click')
-                    element.subjectClick = widget[name]
                     break
                 case 'onLongTap':
                     this.#subscribe('pointerup')
                     this.#subscribe('pointerdown')
                     element.subjectLongTap = widget[name]
                     break
+                case 'onDoubleTap':
+                    this.#subscribe('click')
+                    element.subjectDoubleClick = widget[name]
+                    break
+                case 'onClick':
+                    this.#subscribe('click')
+                    element.subjectClick = widget[name]
+                    break
                 case 'onLongClick':
                     this.#subscribe('pointerup')
                     this.#subscribe('pointerdown')
                     element.subjectLongClick = widget[name]
-                    break
-                case 'onDoubleTap':
-                    this.#subscribe('click')
-                    element.subjectDoubleClick = widget[name]
                     break
                 case 'onDoubleClick':
                     this.#subscribe('click')
