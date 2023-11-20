@@ -57,3 +57,8 @@ export function Link(widget = {}) {
     widget.tag = 'link'
     return Builder.build(widget)
 }
+
+export function Audio(widget = {}) {
+    widget.tag = 'audio'
+    return Builder.build(widget)
+}

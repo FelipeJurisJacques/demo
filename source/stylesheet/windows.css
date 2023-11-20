@@ -1,8 +1,8 @@
 div.window {
     top: 0px;
     left: 0px;
-    width: 50vw;
-    height: 70vh;
+    /* width: 50vw;
+    height: 70vh; */
     /* display: grid; */
     display: flex;
     z-index: 1;
@@ -49,6 +49,18 @@ div.window header div.background div.part2 {
             3px 100%,
             0px calc(100% - 3px),
             0px 48px);
+}
+
+div.window header button.close {
+    position: absolute;
+    right: 0px;
+    border: 0;
+    color: white;
+    background-color: transparent;
+}
+
+div.window header button.close:hover {
+    background-color: red;
 }
 
 div.window div.container {

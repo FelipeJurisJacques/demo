@@ -1,8 +1,21 @@
-import { Div, Footer, Header } from "./Elements.mjs";
+import { Button, Div, Footer, Header } from "./Elements.mjs";
 
 export function Window(header = [], content = [], footer = []) {
-    return document.build(Div({
+    const window = Div({
         class: 'window',
+        style: {
+            width: '100%',
+            height: '100%',
+        },
+    })
+    header.push(Button({
+        class: 'close',
+        content: 'x',
+        onAction: function (event) {
+            window.remove()
+        },
+    }))
+    window.rebuild({
         children: [
             Header({
                 children: [
@@ -57,7 +70,8 @@ export function Window(header = [], content = [], footer = []) {
                 ],
             }),
         ],
-    }))
+    })
+    return window
     // const iframe = document.build({
     //     tag: 'iframe',
     //     src: event.target.src,

@@ -9,6 +9,10 @@ body {
     background-color: black;
 }
 
+button:hover {
+    cursor: pointer;
+}
+
 .transparent {
     border-color: transparent;
     background-color: transparent;

@@ -1,6 +1,3 @@
-import { Subject } from "../utils/Subject.mjs"
-import { Pointer } from "../utils/Pointer.mjs"
-
 export class Builder {
     static #events = []
     static #lastUp = 0
@@ -37,6 +34,9 @@ export class Builder {
                 case 'class':
                     element.className = widget.class
                     break
+                case 'controls':
+                    element[name] = widget[name] ? true : false
+                    break
                 case 'content':
                     element.innerText = widget.content
                     break
@@ -46,6 +46,15 @@ export class Builder {
                 case 'children':
                     for (let child of widget.children) {
                         this.#append(element, child)
+                    }
+                    break
+                case 'style':
+                    for (let style in widget.style) {
+                        let value = widget.style[style]
+                        if (typeof value === 'object' && value instanceof URL) {
+                            value = `url(${value}), auto`
+                        }
+                        element.style[style] = widget.style[style] = value
                     }
                     break
                 case 'onAction':
