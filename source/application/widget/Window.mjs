@@ -1,6 +1,11 @@
 import { Button, Div, Footer, Header } from "./Elements.mjs";
 
-export function Window(header = [], content = [], footer = []) {
+export function Window(header = {}, content = {}, footer = []) {
+    if (!header.children) {
+        header.children = []
+    }
+    header.class = 'content'
+    content.class = 'content'
     const window = Div({
         class: 'window',
         style: {
@@ -8,7 +13,7 @@ export function Window(header = [], content = [], footer = []) {
             height: '100%',
         },
     })
-    header.push(Button({
+    header.children.push(Button({
         class: 'close',
         content: 'x',
         onAction: function (event) {
@@ -30,10 +35,7 @@ export function Window(header = [], content = [], footer = []) {
                             })
                         ],
                     }),
-                    Div({
-                        class: 'content',
-                        children: header,
-                    }),
+                    Div(header),
                 ],
             }),
             Div({
@@ -47,10 +49,7 @@ export function Window(header = [], content = [], footer = []) {
                             })
                         ],
                     }),
-                    Div({
-                        class: 'content',
-                        children: content,
-                    }),
+                    Div(content),
                 ],
             }),
             Footer({

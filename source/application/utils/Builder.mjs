@@ -1,3 +1,5 @@
+import { File } from "./File.mjs"
+
 export class Builder {
     static #events = []
     static #lastUp = 0
@@ -32,10 +34,23 @@ export class Builder {
                     element[name] = widget[name]
                     break
                 case 'class':
-                    element.className = widget.class
+                    if (Array.isArray(widget.class)) {
+                        let values = ''
+                        for (let value of widget.class) {
+                            values = `${values} ${value}`
+                        }
+                        element.className = values
+                    } else if (typeof widget.class === 'string') {
+                        element.className = widget.class
+                    }
                     break
                 case 'controls':
+                case 'multiple':
                     element[name] = widget[name] ? true : false
+                    break
+                case 'directory':
+                    element.directory = widget.directory ? true : false
+                    element.webkitdirectory = widget.directory ? true : false
                     break
                 case 'content':
                     element.innerText = widget.content
@@ -136,6 +151,22 @@ export class Builder {
                 //     this.#subscribe('lostpointercapture')
                 //     element.subjectlostpointercapture = widget[name]
                 //     break
+
+                // ARRASTAR
+                case 'onDragOver':
+                    this.#subscribe('dragover')
+                    element.subjectDragOver = widget[name]
+                    break
+                case 'onDrop':
+                    this.#subscribe('drop')
+                    element.subjectDrop = widget[name]
+                    break
+                case 'onDropFile':
+                    this.#subscribe('drop')
+                    this.#subscribe('dragover')
+                    element.onDropFile = widget[name]
+                    break
+
                 default:
                     element.setAttribute(name, widget[name])
                     break
@@ -305,6 +336,27 @@ export class Builder {
                     return true
                 }
                 break
+
+            // ARRASTAR
+            case 'dragover':
+                if (element.onDropFile) {
+                    event.preventDefault()
+                }
+                if (element.subjectDragOver) {
+                    element.subjectDragOver(event)
+                }
+                break
+            case 'drop':
+                if (element.onDropFile) {
+                    event.preventDefault()
+                    event.files = File.files(event.dataTransfer)
+                    element.onDropFile(event)
+                }
+                if (element.subjectDrop) {
+                    element.subjectDrop(event)
+                }
+                break
+
             default:
                 break
         }
