@@ -35,12 +35,8 @@ export class Builder {
                     break
                 case 'class':
                     if (Array.isArray(widget.class)) {
-                        let values = ''
-                        for (let value of widget.class) {
-                            values = `${values} ${value}`
-                        }
-                        element.className = values
-                    } else if (typeof widget.class === 'string') {
+                        element.className = widget.class.join(' ')
+                    } else {
                         element.className = widget.class
                     }
                     break
@@ -66,8 +62,14 @@ export class Builder {
                 case 'style':
                     for (let style in widget.style) {
                         let value = widget.style[style]
-                        if (typeof value === 'object' && value instanceof URL) {
-                            value = `url(${value}), auto`
+                        if (typeof value === 'object') {
+                            if (value instanceof URL) {
+                                value = `url(${value}), auto`
+                            } else {
+                                value = value.toString()
+                            }
+                        } else if (typeof value === 'number') {
+                            value = CSS.px(value)
                         }
                         element.style[style] = widget.style[style] = value
                     }

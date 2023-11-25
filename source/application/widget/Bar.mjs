@@ -1,6 +1,5 @@
-import { Player } from "../views/Player.mjs"
-import { Contacts } from "../views/Contacts.mjs"
 import { Button, Footer } from "./Elements.mjs"
+import { Views } from "../routes/Views.mjs"
 
 export function Bar() {
     return Footer({
@@ -10,14 +9,14 @@ export function Bar() {
                 child: new URL('/source/image/icon/player.svg', location.origin),
                 title: 'Player',
                 onAction: function (event) {
-                    document.body.appendChild(Player())
+                    Views.route('player')
                 },
             }),
             Button({
                 child: new URL('/source/image/icon/player.svg', location.origin),
                 title: 'Contacts',
                 onAction: function (event) {
-                    document.body.appendChild(Contacts())
+                    Views.route('contacts')
                 },
             }),
         ],

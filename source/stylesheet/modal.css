@@ -1,4 +1,4 @@
-div.window {
+div.modal {
     top: 0px;
     left: 0px;
     /* width: 50vw;
@@ -13,8 +13,8 @@ div.window {
     grid-template-rows: 120px auto 85px;
 }
 
-div.window div.background *,
-div.window div.content {
+div.modal div.background *,
+div.modal div.content {
     top: 0;
     left: 0;
     right: 0;
@@ -26,32 +26,44 @@ div.window div.content {
     /* flex-direction: column; */
 }
 
-div.window header {
+div.modal header {
     position: relative;
-    height: 20px;
+    min-height: 70px;
     margin-bottom: 10px;
 }
 
-div.window header div.background {
-    background: #009FD6;
+div.modal header div.background div.part1 {
+    background: #B3B3B3;
+    clip-path: polygon(0px 0px,
+            24px 0px,
+            0px 24px);
 }
 
-div.window header button.close {
-    top: 0px;
-    right: 12px;
-    color: white;
-    width: 15px;
-    border: 0px;
-    height: 15px;
+div.modal header div.background div.part2 {
+    background: #009FD6;
+    clip-path: polygon(48px 0px,
+            calc(100% - 3px) 0px,
+            100% 3px,
+            100% calc(100% - 3px),
+            calc(100% - 3px) 100%,
+            3px 100%,
+            0px calc(100% - 3px),
+            0px 48px);
+}
+
+div.modal header button.close {
     position: absolute;
+    right: 0px;
+    border: 0;
+    color: white;
     background-color: transparent;
 }
 
-/* div.window header button.close:hover {
+div.modal header button.close:hover {
     background-color: red;
-} */
+}
 
-div.window div.container {
+div.modal div.container {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -59,12 +71,12 @@ div.window div.container {
     min-height: 200px;
 }
 
-div.window div.container div.background div.part1 {
+div.modal div.container div.background div.part1 {
     background: #009FD6;
 }
 
 @media screen and (min-height: 480px) {
-    div.window div.container div.background div.part1 {
+    div.modal div.container div.background div.part1 {
         clip-path: polygon(0px 40%,
                 0px 60%,
                 36px calc(60% + 48px),
@@ -85,7 +97,7 @@ div.window div.container div.background div.part1 {
 }
 
 @media screen and (max-height: 480px) {
-    div.window div.container div.background div.part1 {
+    div.modal div.container div.background div.part1 {
         clip-path: polygon(0px 40%,
                 0px 60%,
                 0px calc(100% - 5px),
@@ -99,7 +111,7 @@ div.window div.container div.background div.part1 {
     }
 }
 
-div.window footer {
+div.modal footer {
     height: 30px;
     position: relative;
     clip-path: polygon(2px 0px,
@@ -114,7 +126,7 @@ div.window footer {
     margin-top: 10px;
 }
 
-div.window footer div.background div.part1 {
+div.modal footer div.background div.part1 {
     background: #009FD6;
     clip-path: polygon(3px 0px,
             calc(100% - 3px) 0px,

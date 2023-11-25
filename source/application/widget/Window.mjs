@@ -1,10 +1,7 @@
+import { Path, Sub, Sum, Translate } from "../styles/Style.mjs";
 import { Button, Div, Footer, Header } from "./Elements.mjs";
 
 export function Window(header = {}, content = {}, footer = []) {
-    if (!header.children) {
-        header.children = []
-    }
-    header.class = 'content'
     content.class = 'content'
     const window = Div({
         class: 'window',
@@ -13,29 +10,61 @@ export function Window(header = {}, content = {}, footer = []) {
             height: '100%',
         },
     })
-    header.children.push(Button({
-        class: 'close',
-        content: 'x',
-        onAction: function (event) {
-            window.remove()
-        },
-    }))
     window.rebuild({
         children: [
             Header({
                 children: [
                     Div({
-                        class: 'background',
-                        children: [
-                            Div({
-                                class: 'part1',
-                            }),
-                            Div({
-                                class: 'part2',
-                            })
+                        class: [
+                            'expanded',
+                            'background',
                         ],
+                        style: {
+                            clipPath: Path([
+                                [0, 0],
+                                [CSS.percent(30), 0],
+                                [Sum(CSS.percent(30), 15), 15],
+                                [Sub(CSS.percent(60), 15), 15],
+                                [CSS.percent(60), 0],
+                                [CSS.percent(100), 0],
+                                [Sub(CSS.percent(100), 15), 15],
+                                [Sub(CSS.percent(100), 45), 15],
+                                [Sub(CSS.percent(100), 50), 20],
+                                [50, 20],
+                                [35, 5],
+                                [5, 5],
+                                //
+                                [0, 0],
+                                [Sub(CSS.percent(100), 42), 16],
+                                [Sub(CSS.percent(100), 46), 20],
+                                [Sub(CSS.percent(100), 48), 20],
+                                [Sub(CSS.percent(100), 44), 16],
+                                [Sub(CSS.percent(100), 42), 16],
+                                //
+                                [0, 0],
+                                [Sub(CSS.percent(100), 38), 16],
+                                [Sub(CSS.percent(100), 42), 20],
+                                [Sub(CSS.percent(100), 44), 20],
+                                [Sub(CSS.percent(100), 40), 16],
+                                [Sub(CSS.percent(100), 38), 16],
+                                //
+                                [0, 0],
+                                [Sub(CSS.percent(100), 34), 16],
+                                [Sub(CSS.percent(100), 38), 20],
+                                [Sub(CSS.percent(100), 40), 20],
+                                [Sub(CSS.percent(100), 36), 16],
+                                [Sub(CSS.percent(100), 34), 16],
+                            ]),
+                        },
                     }),
-                    Div(header),
+                    Button({
+                        class: 'close',
+                        title: 'Close',
+                        child: new URL('/source/image/icon/close.svg', location.origin),
+                        onAction: function (event) {
+                            window.remove()
+                        },
+                    }),
                 ],
             }),
             Div({
@@ -46,43 +75,14 @@ export function Window(header = {}, content = {}, footer = []) {
                         children: [
                             Div({
                                 class: 'part1',
-                            })
+
+                            }),
                         ],
                     }),
                     Div(content),
                 ],
             }),
-            Footer({
-                children: [
-                    Div({
-                        class: 'background',
-                        children: [
-                            Div({
-                                class: 'part1',
-                            }),
-                        ],
-                    }),
-                    Div({
-                        class: 'content',
-                        children: footer,
-                    }),
-                ],
-            }),
         ],
     })
     return window
-    // const iframe = document.build({
-    //     tag: 'iframe',
-    //     src: event.target.src,
-    //     frameborder: 2,
-    // })
-    // document.body.appendChild(iframe)
-    // iframe.subscribe(event => {
-    //     if (event.type === 'pointer' && event.pointer.grab) {
-    //         let newWidth = event.pointer.x - event.target.offsetLeft
-    //         let newHeight = event.pointer.y - event.target.offsetTop
-    //         event.target.style.width = newWidth + 'px'
-    //         event.target.style.height = newHeight + 'px'
-    //     }
-    // })
 }

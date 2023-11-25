@@ -142,4 +142,14 @@ export class File {
             }
         })
     }
+
+    get extension() {
+        const name = this.name
+        const list = name.split('.')
+        if (list.length > 1) {
+            const extension = list[list.length - 1]
+            return extension.toLowerCase()
+        }
+        return ''
+    }
 }
