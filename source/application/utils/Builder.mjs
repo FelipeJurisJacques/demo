@@ -52,7 +52,11 @@ export class Builder {
                     element.innerText = widget.content
                     break
                 case 'child':
-                    this.#append(element, widget.child)
+                    if (typeof widget.child === 'object') {
+                        this.#append(element, widget.child)
+                    } else {
+                        element.innerHTML = widget.child
+                    }
                     break
                 case 'children':
                     for (let child of widget.children) {
@@ -179,8 +183,11 @@ export class Builder {
 
     static #append(element, widget) {
         if (typeof widget === 'object' && widget instanceof URL) {
+            let child = window.document.createElement('div')
+            element.appendChild(child)
             fetch(widget).then(async response => {
-                element.innerHTML = await response.text()
+                child.innerHTML = await response.text()
+                element.replaceChild(child.childNodes[0], child)
             })
         } else {
             element.appendChild(this.build(widget))

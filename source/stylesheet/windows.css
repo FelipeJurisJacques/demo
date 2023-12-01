@@ -36,13 +36,23 @@ div.window header div.background {
     background: #009FD6;
 }
 
+div.window header p.title {
+    top: 0px;
+    left: 50%;
+    font-size: 7pt;
+    position: absolute;
+    transform: translate(-50%, -50%);
+}
+
 div.window header button.close {
     top: 0px;
-    right: 12px;
+    right: 0px;
     color: white;
-    width: 15px;
+    width: 45px;
     border: 0px;
     height: 15px;
+    margin: 0px;
+    padding: 0px;
     position: absolute;
     background-color: transparent;
 }

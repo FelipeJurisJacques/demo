@@ -1,5 +1,5 @@
 import { Path, Sub, Sum, Translate } from "../styles/Style.mjs";
-import { Button, Div, Footer, Header } from "./Elements.mjs";
+import { Button, Div, Footer, Header, P } from "./Elements.mjs";
 
 export function Window(header = {}, content = {}, footer = []) {
     content.class = 'content'
@@ -24,8 +24,8 @@ export function Window(header = {}, content = {}, footer = []) {
                                 [0, 0],
                                 [CSS.percent(30), 0],
                                 [Sum(CSS.percent(30), 15), 15],
-                                [Sub(CSS.percent(60), 15), 15],
-                                [CSS.percent(60), 0],
+                                [Sub(CSS.percent(70), 15), 15],
+                                [CSS.percent(70), 0],
                                 [CSS.percent(100), 0],
                                 [Sub(CSS.percent(100), 15), 15],
                                 [Sub(CSS.percent(100), 45), 15],
@@ -56,6 +56,10 @@ export function Window(header = {}, content = {}, footer = []) {
                                 [Sub(CSS.percent(100), 34), 16],
                             ]),
                         },
+                    }),
+                    P({
+                        class: 'title',
+                        content: 'nova aba',
                     }),
                     Button({
                         class: 'close',

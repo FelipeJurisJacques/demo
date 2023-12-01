@@ -1,3 +1,5 @@
+import { Contact } from "../widget/Contact.mjs";
+import { Div } from "../widget/Elements.mjs";
 import { Window } from "../widget/Window.mjs";
 
 export function Contacts() {
@@ -45,9 +47,19 @@ export function Contacts() {
                             }
                         }
                     }
+                    const elements = []
                     console.log(contacts)
+                    for (let contact of contacts) {
+                        elements.push(Div({
+                            content: contact.fn + '\n' + contact.cell + '\n\r',
+                        }))
+                    }
+                    this.rebuild({
+                        children: elements,
+                    })
                 }
             }
         },
+        child: Contact(),
     })
 }
