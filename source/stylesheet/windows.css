@@ -135,3 +135,16 @@ div.window footer div.background div.part1 {
             0px calc(100% - 3px),
             0px 3px);
 }
+
+div.file {
+    width: 70px;
+    height: 70px;
+    padding: 10px;
+}
+
+div.file p {
+    margin: 0px;
+    padding: 0px;
+    font-size: 7pt;
+    /* transform: translate(-50%, -50%); */
+}

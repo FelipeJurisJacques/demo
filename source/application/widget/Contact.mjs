@@ -1,12 +1,12 @@
 import { Div, P } from "./Elements.mjs";
 
-export function Contact() {
+export function Contact(name) {
     return Div({
-        class: 'contact',
+        class: 'file',
         children: [
             new URL('source/image/icon/folder_user.svg', window.location.origin),
             P({
-                content: 'Nome do Contato',
+                content: name,
             }),
         ],
     })

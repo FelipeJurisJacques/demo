@@ -50,9 +50,7 @@ export function Contacts() {
                     const elements = []
                     console.log(contacts)
                     for (let contact of contacts) {
-                        elements.push(Div({
-                            content: contact.fn + '\n' + contact.cell + '\n\r',
-                        }))
+                        elements.push(Contact(contact.fn))
                     }
                     this.rebuild({
                         children: elements,

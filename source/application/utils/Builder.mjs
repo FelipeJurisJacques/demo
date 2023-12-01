@@ -59,6 +59,9 @@ export class Builder {
                     }
                     break
                 case 'children':
+                    for (let child of element.children) {
+                        child.remove()
+                    }
                     for (let child of widget.children) {
                         this.#append(element, child)
                     }
