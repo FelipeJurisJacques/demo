@@ -1,4 +1,5 @@
 import { File } from "./File.mjs"
+import { Observer } from "./Observer.mjs"
 
 export class Builder {
     static #events = []
@@ -370,6 +371,7 @@ export class Builder {
                 break
 
             default:
+                console.log(event)
                 break
         }
         return false
@@ -381,3 +383,38 @@ Document.prototype.build = Builder.build
 HTMLElement.prototype.rebuild = function (widget = {}) {
     Builder.rebuild(this, widget)
 }
+
+// OBSERVER
+const subscribe = function (observer) {
+    if (!this.handlers) {
+        this.handlers = []
+    }
+    this.handlers.push(observer)
+}
+const unsubscribe = function (observer) {
+    if (this.handlers) {
+        for (let i in this.handlers) {
+            if (this.handlers[i] === observer) {
+                this.handlers.splice(i, 1)
+            }
+        }
+    }
+}
+const notify = function (data) {
+    if (this.handlers) {
+        for (let handler of this.handlers) {
+            if (typeof handler === 'object' && handler instanceof Observer) {
+                handler.notify(data, this)
+            } else if (typeof handler === 'function') {
+                handler(data, this)
+            }
+        }
+    }
+}
+Window.prototype.subscribe = subscribe
+Document.prototype.subscribe = subscribe
+Window.prototype.unsubscribe = unsubscribe
+Document.prototype.unsubscribe = unsubscribe
+
+window.onload = notify
+window.addEventListener('DOMContentLoaded', notify)

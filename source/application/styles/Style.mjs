@@ -101,7 +101,6 @@ export function Path(list) {
         list[i] = new Vector(list[i])
     }
     if (list.length > 0) {
-        console.log(`polygon(${list.join(', ')})`)
         return `polygon(${list.join(', ')})`
     }
     return ''

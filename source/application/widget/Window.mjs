@@ -1,5 +1,5 @@
-import { Path, Sub, Sum, Translate } from "../styles/Style.mjs";
-import { Button, Div, Footer, Header, P } from "./Elements.mjs";
+import { Path, Sub, Sum } from "../styles/Style.mjs";
+import { Button, Div, Header, P } from "./Elements.mjs";
 
 export function Window(header = {}, content = {}, footer = []) {
     content.class = 'content'

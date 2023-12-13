@@ -17,6 +17,8 @@ export class Views {
     }
 }
 
-if (window.location.hash) {
-    Views.route(window.location.hash.substring(1))
-}
+window.subscribe(event => {
+    if (event.type === 'load' && window.location.hash) {
+        Views.route(window.location.hash.substring(1))
+    }
+})

@@ -1,6 +1,5 @@
-import { Contact } from "../widget/Contact.mjs";
-import { Div } from "../widget/Elements.mjs";
 import { Window } from "../widget/Window.mjs";
+import { Contact } from "../widget/Contact.mjs";
 
 export function Contacts() {
     return Window({}, {
@@ -58,6 +57,5 @@ export function Contacts() {
                 }
             }
         },
-        child: Contact(),
     })
 }
