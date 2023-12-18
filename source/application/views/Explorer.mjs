@@ -1,7 +1,7 @@
 import { Window } from "../widget/Window.mjs";
 import { Contact } from "../widget/Contact.mjs";
 
-export function Contacts() {
+export function Explorer() {
     return Window({}, {
         onDropFile: async function (event) {
             for (let file of event.files) {

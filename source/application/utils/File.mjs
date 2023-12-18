@@ -1,9 +1,26 @@
+import { IndexedDataBase } from "./IndexedDataBase.mjs"
+
 export class File {
 
     /**
-     * @var {File|null}
+     * @var {File[]}
      */
+    static #externals = []
+
+    /**
+     * @var {int}
+     */
+    #id
+
+    /**
+     * @var {File|null}
+    */
     #file
+
+    /**
+    * @var {String}
+    */
+    #path
 
     /**
      * @var {FileSystemEntry|FileSystemDirectoryEntry|null}
@@ -19,6 +36,11 @@ export class File {
      * @var {DataTransferItem|null}
      */
     #stream
+
+    /**
+     * @var {IndexedDataBaseConnection}
+     */
+    #connection
 
     static files(stream) {
         const data = []
@@ -58,6 +80,7 @@ export class File {
                     this.#handle = handle
                 })
             }
+            File.#externals.push(this)
         }
     }
 
@@ -91,6 +114,35 @@ export class File {
             return true
         }
         return false
+    }
+
+    get path() {
+        if (this.#path) {
+            return this.#path
+        }
+        let path
+        if (this.#file && this.#file.name) {
+            path = this.#file.name
+        }
+        if (this.#entry && this.#entry.fullPath) {
+            path = this.#entry.fullPath
+        }
+        if (this.#handle && this.#handle.name) {
+            path = this.#handle.name
+        }
+        if (path) {
+            if (path.substring(0, 1) === '/') {
+                path = path.substring(1)
+            }
+            return `/storage/${path}`
+        }
+        return ''
+    }
+
+    get origin () {
+        const path = this.path
+        const index = path.lastIndexOf('/')
+        return path.substring(0, index + 1)
     }
 
     get name() {
@@ -151,5 +203,59 @@ export class File {
             return extension.toLowerCase()
         }
         return ''
+    }
+
+    async copy(to) {
+        if (!to || to.substr(-1, 1) !== '/') {
+            return null
+        }
+        const from = this.origin
+        const content = await this.content
+        // do dispositivo
+        if (from.substring(0, 8) === '/storage') {
+            // para diretorio temporario
+            if (to.substring(0, 10) === '/temporary') {
+                const path = `${to}${this.name}`
+                const connection = IndexedDataBase.from('files')
+                await connection.open()
+                const transaction = connection.transaction([
+                    'files',
+                    'paths',
+                ], true)
+                let result = null
+                try {
+                    const fstorage = transaction.storage('files')
+                    const pstorage = transaction.storage('paths')
+                    const index = pstorage.index('path')
+                    if (await index.empty(path)) {
+                        const time = (new Date).getTime()
+                        const id = await pstorage.add({
+                            path: path,
+                            size: this.size,
+                            type: this.type,
+                            parent: null,
+                            deleted: false,
+                            created: time,
+                            updated: time,
+                        })
+                        await fstorage.add({
+                            path: id,
+                            content: content,
+                        })
+                        result = new File()
+                        result.#id = id
+                        result.#path = path
+                    }
+                    transaction.commit()
+                } catch (error) {
+                    console.error(error)
+                    transaction.abort()
+                } finally {
+                    connection.close()
+                }
+                return result
+            }
+        }
+        return null
     }
 }

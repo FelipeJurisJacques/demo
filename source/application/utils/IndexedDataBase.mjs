@@ -234,14 +234,11 @@ class IndexedDataBaseConnection {
     /**
      * @param {string|Array<string>} names
      * @param {boolean} write
-     * @returns {Promise<IndexedDataBaseTransaction>}
+     * @returns {IndexedDataBaseTransaction}
      */
-    async transaction(names, write = true) {
+    transaction(names, write = true) {
         if (typeof names === 'object' && names instanceof Array && names.length > 1) {
             names = names.sort()
-        }
-        if (!this.opened) {
-            await this.open()
         }
         // if (!this.opened) {
         //     throw new Error('The database connection is closing')

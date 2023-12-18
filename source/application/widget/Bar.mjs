@@ -19,6 +19,13 @@ export function Bar() {
                     Views.route('contacts')
                 },
             }),
+            Button({
+                child: new URL('/source/image/icon/folder.svg', location.origin),
+                title: 'Explorer',
+                onAction: function (event) {
+                    Views.route('explorer')
+                },
+            }),
         ],
     })
 }

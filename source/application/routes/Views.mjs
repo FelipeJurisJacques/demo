@@ -1,5 +1,6 @@
 import { Player } from "../views/Player.mjs"
 import { Contacts } from "../views/Contacts.mjs"
+import { Explorer } from "../views/Explorer.mjs"
 
 export class Views {
     static route(path) {
@@ -9,6 +10,9 @@ export class Views {
                 break
             case 'contacts':
                 document.body.appendChild(Contacts())
+                break
+            case 'explorer':
+                document.body.appendChild(Explorer())
                 break
             default:
                 break

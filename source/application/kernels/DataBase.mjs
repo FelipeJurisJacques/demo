@@ -113,6 +113,49 @@ export class DataBase {
                     ],
                 }
             },
+            files: {
+                version: 2,
+                upgrade: {
+                    stores: [
+                        {
+                            name: 'paths',
+                            options: {
+                                keyPath: 'id',
+                                autoIncrement: true,
+                            },
+                            indexes: [
+                                {
+                                    name: 'path',
+                                    options: {
+                                        unique: true,
+                                    }
+                                },
+                                {
+                                    name: 'parent',
+                                    options: {
+                                        unique: false,
+                                    }
+                                },
+                            ],
+                        },
+                        {
+                            name: 'files',
+                            options: {
+                                keyPath: 'id',
+                                autoIncrement: true,
+                            },
+                            indexes: [
+                                {
+                                    name: 'path',
+                                    options: {
+                                        unique: true,
+                                    }
+                                },
+                            ],
+                        },
+                    ],
+                }
+            }
         }
     }
 }
