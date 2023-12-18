@@ -23,24 +23,49 @@ export class File {
     #path
 
     /**
-     * @var {FileSystemEntry|FileSystemDirectoryEntry|null}
+     * @var {int}
      */
+    #size
+
+    /**
+     * @var {String}
+     */
+    #type
+
+    /**
+     * @var {FileSystemEntry|FileSystemDirectoryEntry|null}
+    */
     #entry
 
     /**
      * @var {FileSystemFileHandle|FileSystemDirectoryHandle|null}
-     */
+    */
     #handle
 
     /**
      * @var {DataTransferItem|null}
-     */
+    */
     #stream
 
     /**
-     * @var {IndexedDataBaseConnection}
+     * @var {int}
      */
-    #connection
+    #parent
+
+    /**
+     * @var {bool}
+     */
+    #deleted
+
+    /**
+     * @var {int}
+     */
+    #created
+
+    /**
+     * @var {int}
+     */
+    #updated
 
     static files(stream) {
         const data = []
@@ -62,6 +87,30 @@ export class File {
         return data
     }
 
+    static async glob(path = '/') {
+        const connection = IndexedDataBase.from('paths')
+        await connection.open()
+        const transaction = connection.transaction('paths', false)
+        const result = []
+        try {
+            const storage = transaction.storage('paths')
+            const index = storage.index('parent')
+            const rows = await index.all(0)
+            let file
+            for (let row of rows) {
+                file = new File()
+                file.#id = row.id
+                result.push(file)
+            }
+            transaction.commit()
+        } catch (error) {
+            console.error(error)
+            transaction.abort()
+        } finally {
+            connection.close()
+        }
+        return result
+    }
     constructor(stream = null) {
         this.#file = null
         this.#entry = null
@@ -139,7 +188,7 @@ export class File {
         return ''
     }
 
-    get origin () {
+    get origin() {
         const path = this.path
         const index = path.lastIndexOf('/')
         return path.substring(0, index + 1)
