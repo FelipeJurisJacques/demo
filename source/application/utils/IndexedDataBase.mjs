@@ -179,10 +179,26 @@ class IndexedDataBaseConnection {
                             }
                             if (store.indexes) {
                                 for (let index of store.indexes) {
-                                    if (index.options) {
-                                        storage.createIndex(index.name, index.name, index.options)
-                                    } else {
-                                        storage.createIndex(index.name, index.name)
+                                    let name = null
+                                    if (index.name) {
+                                        name = index.name
+                                    } else if (index.column) {
+                                        name = index.column
+                                    }
+                                    let column = null
+                                    if (index.column) {
+                                        column = index.column
+                                    } else if (index.columns) {
+                                        column = index.columns
+                                    } else if (index.name) {
+                                        column = index.name
+                                    }
+                                    if (name && column) {
+                                        if (index.options) {
+                                            storage.createIndex(index.name, column, index.options)
+                                        } else {
+                                            storage.createIndex(index.name, column)
+                                        }
                                     }
                                 }
                             }
@@ -492,24 +508,6 @@ class IndexedDataBaseObjectStore {
         })
     }
 
-    // cursor() {
-    //     return new Promise((resolve, reject) => {
-    //         const result = []
-    //         const request = this.#storage.openCursor()
-    //         request.onerror = () => {
-    //             reject(new Error('Error to open cursor'))
-    //         }
-    //         request.onsuccess = () => {
-    //             if (request.result) {
-    //                 result.push(request.result.value)
-    //                 request.result.continue()
-    //             } else {
-    //                 resolve(result)
-    //             }
-    //         }
-    //     })
-    // }
-
     /**
      * @param {object} data 
      * @param {number} id 
@@ -573,6 +571,27 @@ class IndexedDataBaseObjectStore {
             }
         })
     }
+
+    /**
+     * @returns {Promise<Array>}
+     */
+    #cursor() {
+        return new Promise((resolve, reject) => {
+            const result = []
+            const request = this.#storage.openCursor()
+            request.onerror = () => {
+                reject(new Error('Error to open cursor'))
+            }
+            request.onsuccess = () => {
+                if (request.result) {
+                    result.push(request.result.value)
+                    request.result.continue()
+                } else {
+                    resolve(result)
+                }
+            }
+        })
+    }
 }
 
 class IndexedDataBaseObjectStoreIndex {
@@ -587,6 +606,13 @@ class IndexedDataBaseObjectStoreIndex {
      */
     constructor(index) {
         this.#index = index
+    }
+
+    /**
+     * @returns {String}
+     */
+    get column() {
+        return this.#index.name
     }
 
     /**
@@ -621,24 +647,6 @@ class IndexedDataBaseObjectStoreIndex {
         })
     }
 
-    // cursor(value) {
-    //     return new Promise((resolve, reject) => {
-    //         const result = []
-    //         const request = this.#index.openCursor(value)
-    //         request.onerror = () => {
-    //             reject(new Error('Error to index cursor'))
-    //         }
-    //         request.onsuccess = () => {
-    //             if (request.result) {
-    //                 result.push(request.result.value)
-    //                 request.result.continue()
-    //             } else {
-    //                 resolve(result)
-    //             }
-    //         }
-    //     })
-    // }
-
     /**
      * @param {any} value 
      * @returns {Promise<boolean>}
@@ -651,6 +659,75 @@ class IndexedDataBaseObjectStoreIndex {
             }
             request.onsuccess = () => {
                 resolve(!request.result)
+            }
+        })
+    }
+
+    /**
+     * @param {String} value 
+     * @returns {Promise<Array>}
+     */
+    like(value) {
+        return new Promise((resolve, reject) => {
+            let end = value.substring(value.length - 1) === '%'
+            let start = value.substring(0, 1) === '%'
+            if (!end && !start) {
+                reject(new Error('Invalid like value'))
+            } else {
+                let range = null
+                if (end) {
+                    value = value.substring(0, value.length - 1)
+                } else if (start) {
+                    value = value.substring(1)
+                }
+                if (end && !start) {
+                    range = IDBKeyRange.upperBound(value)
+                } else if (!end && start) {
+                    range = IDBKeyRange.lowerBound(value)
+                }
+                const result = []
+                const request = range ? this.#index.openCursor(range) : this.#index.openCursor()
+                request.onerror = () => {
+                    reject(new Error('Error to index cursor'))
+                }
+                const column = this.column
+                request.onsuccess = () => {
+                    if (request.result) {
+                        const value = request.result.value[column]
+                        if (
+                            (end && start && value.includes(value))
+                            || (end && !start && value.endsWith(value))
+                            || (!end && start && value.startsWith(value))
+                        ) {
+                            result.push(request.result.value)
+                        }
+                        request.result.continue()
+                    } else {
+                        resolve(result)
+                    }
+                }
+            }
+        })
+    }
+
+    /**
+     * @param {IDBKeyRange} range
+     * @returns {Promise<Array>}
+     */
+    #cursor(range) {
+        return new Promise((resolve, reject) => {
+            const result = []
+            const request = this.#index.openCursor(range)
+            request.onerror = () => {
+                reject(new Error('Error to index cursor'))
+            }
+            request.onsuccess = () => {
+                if (request.result) {
+                    result.push(request.result.value)
+                    request.result.continue()
+                } else {
+                    resolve(result)
+                }
             }
         })
     }

@@ -1,4 +1,5 @@
-import { IndexedDataBase } from "./IndexedDataBase.mjs"
+import { Connection } from "../libraries/database/IndexedDataBase/Connection.mjs"
+import { Query } from "../libraries/database/IndexedDataBase/Query.mjs"
 
 export class File {
 
@@ -88,7 +89,8 @@ export class File {
     }
 
     static async glob(path = '/') {
-        const connection = IndexedDataBase.from('paths')
+        const connection = Connection.from('storage')
+        const query = Query.connection('storage')
         await connection.open()
         const transaction = connection.transaction('paths', false)
         const result = []
@@ -306,5 +308,51 @@ export class File {
             }
         }
         return null
+    }
+
+    async save()
+    {
+        if (!this.#path) {
+            throw new Error('path is invalid')
+        }
+        const content = await this.content
+        const connection = IndexedDataBase.from('files')
+        await connection.open()
+        const transaction = connection.transaction([
+            'files',
+            'paths',
+        ], true)
+        let result = null
+        try {
+            const fstorage = transaction.storage('files')
+            const pstorage = transaction.storage('paths')
+            const index = pstorage.index('path')
+            if (await index.empty(this.#path)) {
+                const time = (new Date).getTime()
+                const id = await pstorage.add({
+                    path: this.path,
+                    size: this.size,
+                    type: this.type,
+                    parent: null,
+                    deleted: false,
+                    created: time,
+                    updated: time,
+                })
+                await fstorage.add({
+                    path: id,
+                    content: content,
+                })
+                result = new File()
+                result.#id = id
+                result.#path = path
+            }
+            transaction.commit()
+        } catch (error) {
+            console.error(error)
+            transaction.abort()
+        } finally {
+            connection.close()
+        }
+        return result
     }
 }
