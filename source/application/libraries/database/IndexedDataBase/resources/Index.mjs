@@ -1,9 +1,16 @@
+import { Cursor } from "./Cursor.mjs"
+
 export class Index {
 
     /**
      * @var {IDBIndex}
      */
     #index
+
+    /**
+     * @var {function}
+     */
+    #callback
 
     /**
      * @param {IDBIndex} index
@@ -116,23 +123,9 @@ export class Index {
 
     /**
      * @param {IDBKeyRange} range
-     * @returns {Promise<Array>}
+     * @returns {Cursor}
      */
-    #cursor(range) {
-        return new Promise((resolve, reject) => {
-            const result = []
-            const request = this.#index.openCursor(range)
-            request.onerror = () => {
-                reject(new Error('Error to index cursor'))
-            }
-            request.onsuccess = () => {
-                if (request.result) {
-                    result.push(request.result.value)
-                    request.result.continue()
-                } else {
-                    resolve(result)
-                }
-            }
-        })
+    cursor(range) {
+        return new Cursor(this.#index.openCursor(range))
     }
 }

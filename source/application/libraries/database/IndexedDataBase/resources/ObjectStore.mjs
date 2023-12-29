@@ -1,3 +1,6 @@
+import { Cursor } from "./Cursor.mjs"
+import { Index } from "./Index.mjs"
+
 export class ObjectStore {
 
     /**
@@ -12,18 +15,25 @@ export class ObjectStore {
         this.#storage = storage
     }
 
+    /**
+     * @var {string|null}
+     */
+    get key() {
+        return this.#storage.keyPath
+    }
+
     get name() {
-        this.#storage.name
+        return this.#storage.name
     }
 
     /**
      * @throws {DOMException}
      * @param {string} key
-     * @returns {IndexedDataBaseObjectStoreIndex}
+     * @returns {Index}
      */
     index(key) {
         const index = this.#storage.index(key)
-        return new IndexedDataBaseObjectStoreIndex(index)
+        return new Index(index)
     }
 
     /**
@@ -138,23 +148,9 @@ export class ObjectStore {
     }
 
     /**
-     * @returns {Promise<Array>}
+     * @returns {Cursor}
      */
-    #cursor() {
-        return new Promise((resolve, reject) => {
-            const result = []
-            const request = this.#storage.openCursor()
-            request.onerror = () => {
-                reject(new Error('Error to open cursor'))
-            }
-            request.onsuccess = () => {
-                if (request.result) {
-                    result.push(request.result.value)
-                    request.result.continue()
-                } else {
-                    resolve(result)
-                }
-            }
-        })
+    cursor() {
+        return new Cursor(this.#storage.openCursor())
     }
 }

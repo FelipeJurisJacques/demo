@@ -1,4 +1,5 @@
 import { Upgrade } from "./Upgrade.mjs"
+import { Transaction } from "./Transaction.mjs"
 
 export class DataBaseConnection {
 
@@ -136,14 +137,14 @@ export class DataBaseConnection {
     /**
      * @param {string|Array<string>} names
      * @param {boolean} write
-     * @returns {IndexedDataBaseTransaction}
+     * @returns {Transaction}
      */
     transaction(names, write = true) {
         if (typeof names === 'object' && names instanceof Array && names.length > 1) {
             names = names.sort()
         }
         const object = this.#database.transaction(names, write ? 'readwrite' : 'readonly')
-        const instance = new IndexedDataBaseTransaction(object)
+        const instance = new Transaction(object)
         this.#transactions.push(instance)
         this.#autoClose()
         return instance

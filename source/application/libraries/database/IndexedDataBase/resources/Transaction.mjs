@@ -1,3 +1,5 @@
+import { ObjectStore } from "./ObjectStore.mjs"
+
 export class Transaction {
 
     /**
@@ -11,7 +13,7 @@ export class Transaction {
     #error
 
     /**
-     * @var {Array<IndexedDataBaseObjectStore>}
+     * @var {Array<ObjectStore>}
      */
     #storages
 
@@ -68,7 +70,7 @@ export class Transaction {
     }
 
     /**
-     * @returns {Array<string>}
+     * @returns {string[]}
      */
     get names() {
         const list = []
@@ -76,6 +78,13 @@ export class Transaction {
             list.push(name)
         }
         return list.length > 1 ? list.sort() : list
+    }
+
+    /**
+     * @returns {ObjectStore[]}
+     */
+    get storages() {
+        return this.#storages
     }
 
     commit() {
@@ -90,7 +99,7 @@ export class Transaction {
 
     /**
      * @param {string} name 
-     * @returns {IndexedDataBaseObjectStore}
+     * @returns {ObjectStore}
      */
     storage(name) {
         if (this.#storages.length > 0) {
@@ -101,7 +110,7 @@ export class Transaction {
             }
         }
         const object = this.#transaction.objectStore(name)
-        const instance = new IndexedDataBaseObjectStore(object)
+        const instance = new ObjectStore(object)
         this.#storages.push(instance)
         return instance
     }

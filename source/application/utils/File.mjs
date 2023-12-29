@@ -1,4 +1,3 @@
-import { Connection } from "../libraries/database/IndexedDataBase/Connection.mjs"
 import { Query } from "../libraries/database/IndexedDataBase/Query.mjs"
 
 export class File {
@@ -88,30 +87,16 @@ export class File {
         return data
     }
 
-    static async glob(path = '/') {
-        const connection = Connection.from('storage')
+    static async glob(path = '/*') {
+        const level = path.split('/').length
         const query = Query.connection('storage')
-        await connection.open()
-        const transaction = connection.transaction('paths', false)
-        const result = []
-        try {
-            const storage = transaction.storage('paths')
-            const index = storage.index('parent')
-            const rows = await index.all(0)
-            let file
-            for (let row of rows) {
-                file = new File()
-                file.#id = row.id
-                result.push(file)
-            }
-            transaction.commit()
-        } catch (error) {
-            console.error(error)
-            transaction.abort()
-        } finally {
-            connection.close()
-        }
-        return result
+        query.from('files')
+        query.where(Query.upperBound('path', path))
+        query.having(value => {
+            return value && value.path && value.path.split('/').length === level
+        })
+        const file = await query.fetch()
+        console.log(file)
     }
     constructor(stream = null) {
         this.#file = null

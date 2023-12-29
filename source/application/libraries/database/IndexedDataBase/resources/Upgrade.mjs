@@ -3,11 +3,6 @@ import { Schema } from "../Schema.mjs"
 export class Upgrade {
 
     /**
-     * @var {IDBVersionChangeEvent}
-     */
-    #event
-
-    /**
      * @var {IDBDatabase}
      */
     #connection
@@ -16,7 +11,6 @@ export class Upgrade {
      * @param {IDBVersionChangeEvent} event 
      */
     constructor(event) {
-        this.#event = event
         this.#connection = event.target.result
     }
 
