@@ -1,5 +1,5 @@
-import { Cursor } from "./Cursor.mjs"
 import { Index } from "./Index.mjs"
+import { Cursor } from "./Cursor.mjs"
 
 export class ObjectStore {
 
@@ -24,6 +24,17 @@ export class ObjectStore {
 
     get name() {
         return this.#storage.name
+    }
+
+    /**
+     * @returns {string[]}
+     */
+    get indexes() {
+        const list = []
+        for (let name of this.#storage.indexNames) {
+            list.push(name)
+        }
+        return list
     }
 
     /**

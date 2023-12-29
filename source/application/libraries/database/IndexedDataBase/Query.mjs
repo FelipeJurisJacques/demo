@@ -1,4 +1,5 @@
 import { Connection } from "./Connection.mjs"
+import { Transaction } from "./resources/Transaction.mjs"
 
 export class Query {
 
@@ -44,7 +45,7 @@ export class Query {
 
     /**
      * @param {string} name 
-     * @returns {self}
+     * @returns {Query}
      */
     static connection(name) {
         return new Query(Connection.from(name))
@@ -89,10 +90,14 @@ export class Query {
     }
 
     /**
-     * @param {Connection} connection 
+     * @param {Connection|Transaction} stream
      */
-    constructor(connection) {
-        this.#connection = connection
+    constructor(stream) {
+        if (stream instanceof Transaction) {
+            this.#transaction = stream
+        } else {
+            this.#connection = stream
+        }
     }
 
     /**
@@ -118,6 +123,33 @@ export class Query {
      */
     having(callback) {
         this.#having = callback
+    }
+
+    async add(value) {
+        if (!this.#transaction) {
+            await this.#connection.open()
+            this.#transaction = this.#connection.transaction([
+                `${this.#table}_data`,
+                `${this.#table}_index`,
+            ], true)
+        }
+        const data = this.#transaction.storage(`${this.#table}_data`)
+        const index = this.#transaction.storage(`${this.#table}_index`)
+        const indexes = index.indexes
+        const part_1 = {}
+        const part_2 = {}
+        for (let key in value) {
+            if (indexes.contains(key)) {
+                part_1[key] = value[key]
+            } else {
+                part_2[key] = value[key]
+            }
+        }
+        const id = await index.add(part_1)
+        part_2[index.key] = id
+        await data.add(part_2)
+        this.#transaction.commit()
+        return id
     }
 
     fetch() {
@@ -156,11 +188,13 @@ export class Query {
 
     async #start() {
         if (!this.#cursor) {
-            await this.#connection.open()
-            this.#transaction = this.#connection.transaction([
-                `${this.#table}_data`,
-                `${this.#table}_index`,
-            ], false)
+            if (!this.#transaction) {
+                await this.#connection.open()
+                this.#transaction = this.#connection.transaction([
+                    `${this.#table}_data`,
+                    `${this.#table}_index`,
+                ], false)
+            }
             const storage = this.#transaction.storage(`${this.#table}_index`)
             if (this.#index) {
                 const index = storage.index(this.#index)

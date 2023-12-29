@@ -1,3 +1,4 @@
+import { Connection } from "../libraries/database/IndexedDataBase/Connection.mjs"
 import { Query } from "../libraries/database/IndexedDataBase/Query.mjs"
 
 export class File {
@@ -98,6 +99,7 @@ export class File {
         const file = await query.fetch()
         console.log(file)
     }
+
     constructor(stream = null) {
         this.#file = null
         this.#entry = null
@@ -252,12 +254,20 @@ export class File {
             // para diretorio temporario
             if (to.substring(0, 10) === '/temporary') {
                 const path = `${to}${this.name}`
-                const connection = IndexedDataBase.from('files')
+                const connection = Connection.from('storage')
                 await connection.open()
-                const transaction = connection.transaction([
-                    'files',
-                    'paths',
-                ], true)
+                const transaction = connection.transaction('files', true)
+                let query = new Query(connection)
+                query.from('files')
+                query.add({
+                    path: path,
+                    size: this.size,
+                    type: this.type,
+                    parent: null,
+                    deleted: false,
+                    created: time,
+                    updated: time,
+                })
                 let result = null
                 try {
                     const fstorage = transaction.storage('files')

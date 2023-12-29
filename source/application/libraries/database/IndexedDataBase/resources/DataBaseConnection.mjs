@@ -65,7 +65,7 @@ export class DataBaseConnection {
     }
 
     /**
-     * @returns {Array<IndexedDataBaseTransaction>}
+     * @returns {Transaction[]}
      */
     get transactions() {
         return this.#transactions
@@ -76,6 +76,17 @@ export class DataBaseConnection {
      */
     get version() {
         return this.#database ? this.#database.version : 0
+    }
+
+    /**
+     * @returns {string[]}
+     */
+    get storages() {
+        const list = []
+        for (let name of this.#database.objectStoreNames) {
+            list.push(name)
+        }
+        return list
     }
 
     /**

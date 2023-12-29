@@ -19,8 +19,27 @@ export class Connection extends DataBaseConnection {
                 }
             }
         }
-        const connection = new DataBaseConnection(name)
+        const connection = new Connection(name)
         this.#connections.push()
         return connection
+    }
+
+    /**
+     * @param {string|string[]} names
+     * @param {boolean} write
+     * @returns {Transaction}
+     */
+    transaction(names, write = true) {
+        const n = []
+        const list = typeof names === 'string' ? [names] : names
+        const storages = this.storages
+        for (let name of list) {
+            for (let store of storages) {
+                if (store === name && store.startsWith(name)) {
+                    n.push(store)
+                }
+            }
+        }
+        return super.transaction(n, write)
     }
 }
