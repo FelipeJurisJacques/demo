@@ -256,36 +256,33 @@ export class File {
                 const path = `${to}${this.name}`
                 const connection = Connection.from('storage')
                 await connection.open()
-                const transaction = connection.transaction('files', true)
-                let query = new Query(connection)
-                query.from('files')
-                query.add({
-                    path: path,
-                    size: this.size,
-                    type: this.type,
-                    parent: null,
-                    deleted: false,
-                    created: time,
-                    updated: time,
-                })
+                const transaction = connection.transaction([
+                    'files',
+                    'files_content',
+                ], true)
                 let result = null
                 try {
-                    const fstorage = transaction.storage('files')
-                    const pstorage = transaction.storage('paths')
-                    const index = pstorage.index('path')
-                    if (await index.empty(path)) {
-                        const time = (new Date).getTime()
-                        const id = await pstorage.add({
+                    let query = new Query(connection)
+                    query.from('files')
+                    query.where(Query.equal('path', path))
+                    const file = await query.fetch()
+                    console.log(file)
+                    if (!file) {
+                        const time = (new Date()).getTime()
+                        query = new Query(connection)
+                        query.from('files')
+                        const id = await query.add({
                             path: path,
                             size: this.size,
                             type: this.type,
-                            parent: null,
                             deleted: false,
                             created: time,
                             updated: time,
                         })
-                        await fstorage.add({
-                            path: id,
+                        query = new Query(connection)
+                        query.from('files_content')
+                        await query.add({
+                            file_id: id,
                             content: content,
                         })
                         result = new File()
@@ -299,14 +296,14 @@ export class File {
                 } finally {
                     connection.close()
                 }
+                console.log(result)
                 return result
             }
         }
         return null
     }
 
-    async save()
-    {
+    async save() {
         if (!this.#path) {
             throw new Error('path is invalid')
         }

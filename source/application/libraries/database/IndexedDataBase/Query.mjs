@@ -129,27 +129,30 @@ export class Query {
         if (!this.#transaction) {
             await this.#connection.open()
             this.#transaction = this.#connection.transaction([
+                this.#table,
                 `${this.#table}_data`,
-                `${this.#table}_index`,
             ], true)
         }
-        const data = this.#transaction.storage(`${this.#table}_data`)
-        const index = this.#transaction.storage(`${this.#table}_index`)
-        const indexes = index.indexes
-        const part_1 = {}
-        const part_2 = {}
-        for (let key in value) {
-            if (indexes.contains(key)) {
-                part_1[key] = value[key]
-            } else {
-                part_2[key] = value[key]
+        const index = this.#transaction.storage(this.#table)
+        if (this.#contains(this.#transaction.names, `${this.#table}_data`)) {
+            const data = this.#transaction.storage(`${this.#table}_data`)
+            const indexes = index.indexes
+            const part_1 = {}
+            const part_2 = {}
+            for (let key in value) {
+                if (this.#contains(indexes, key)) {
+                    part_1[key] = value[key]
+                } else {
+                    part_2[key] = value[key]
+                }
             }
+            const id = await index.add(part_1)
+            part_2[index.key] = id
+            await data.add(part_2)
+            return id
+        } else {
+            return await index.add(value)
         }
-        const id = await index.add(part_1)
-        part_2[index.key] = id
-        await data.add(part_2)
-        this.#transaction.commit()
-        return id
     }
 
     fetch() {
@@ -190,12 +193,9 @@ export class Query {
         if (!this.#cursor) {
             if (!this.#transaction) {
                 await this.#connection.open()
-                this.#transaction = this.#connection.transaction([
-                    `${this.#table}_data`,
-                    `${this.#table}_index`,
-                ], false)
+                this.#transaction = this.#connection.transaction(this.#table, false)
             }
-            const storage = this.#transaction.storage(`${this.#table}_index`)
+            const storage = this.#transaction.storage(this.#table)
             if (this.#index) {
                 const index = storage.index(this.#index)
                 this.#cursor = index.cursor(this.#range)
@@ -203,5 +203,14 @@ export class Query {
                 this.#cursor = storage.cursor()
             }
         }
+    }
+
+    #contains(list, search) {
+        for (let value of list) {
+            if (value === search) {
+                return true
+            }
+        }
+        return false
     }
 }

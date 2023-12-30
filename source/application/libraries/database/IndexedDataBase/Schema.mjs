@@ -12,13 +12,6 @@ export class Schema {
     /**
      * @returns {string}
      */
-    static get HEAVY() {
-        return 'heavy'
-    }
-
-    /**
-     * @returns {string}
-     */
     static get INDEX() {
         return 'index'
     }
@@ -126,7 +119,8 @@ export class Schema {
                 break
             }
         }
-        this.#index = this.#connection.createObjectStore(`${this.#table}_index`, options)
+        this.#index = this.#connection.createObjectStore(this.#table, options)
+        let indexed = false
         for (let colum in this.#columns) {
             if (this.#columns[colum][Schema.INDEX] === true) {
                 if (this.#columns[colum][Schema.KEY] === true) {
@@ -142,26 +136,13 @@ export class Schema {
                     unique: this.#columns[colum][Schema.UNIQUE] === true,
                     multiEntry: this.#columns[colum][Schema.SCALAR] === false,
                 })
+                indexed = true
             }
         }
-        this.#data = this.#connection.createObjectStore(`${this.#table}_data`, {
-            keyPath: options.keyPath
-        })
-        for (let colum in this.#columns) {
-            if (this.#columns[colum][Schema.HEAVY] === true) {
-                if (this.#columns[colum][Schema.KEY] === true) {
-                    throw new SchemaError('column key do not should be key of table')
-                }
-                if (this.#columns[colum][Schema.INDEX] === true) {
-                    throw new SchemaError('column key do not should be index')
-                }
-                if (this.#columns[colum][Schema.AUTO_INCREMENT] === true) {
-                    throw new SchemaError('column key do not should be auto increment')
-                }
-                this.#connection.createObjectStore(`${this.#table}_${colum}_data`, {
-                    keyPath: options.keyPath
-                })
-            }
+        if (indexed) {
+            this.#data = this.#connection.createObjectStore(`${this.#table}_data`, {
+                keyPath: options.keyPath
+            })
         }
     }
 

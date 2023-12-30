@@ -35,7 +35,7 @@ export class Connection extends DataBaseConnection {
         const storages = this.storages
         for (let name of list) {
             for (let store of storages) {
-                if (store === name && store.startsWith(name)) {
+                if (store === name || store === `${name}_data`) {
                     n.push(store)
                 }
             }

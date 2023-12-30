@@ -99,7 +99,7 @@ export class Transaction {
 
     /**
      * @param {string} name 
-     * @returns {ObjectStore}
+     * @returns {ObjectStore|null}
      */
     storage(name) {
         if (this.#storages.length > 0) {

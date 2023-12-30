@@ -53,12 +53,16 @@ export class ObjectStore {
      */
     add(data) {
         return new Promise((resolve, reject) => {
-            const request = this.#storage.add(data)
-            request.onerror = event => {
-                reject(event.target.error ? event.target.error : new Error('Error to insert data'))
-            }
-            request.onsuccess = event => {
-                resolve(event.target.result ? event.target.result : null)
+            if (this.#serializable(data)) {
+                const request = this.#storage.add(data)
+                request.onerror = event => {
+                    reject(event.target.error)
+                }
+                request.onsuccess = event => {
+                    resolve(event.target.result ? event.target.result : null)
+                }
+            } else {
+                reject(new Error('value to insert is not serializable'))
             }
         })
     }
@@ -163,5 +167,25 @@ export class ObjectStore {
      */
     cursor() {
         return new Cursor(this.#storage.openCursor())
+    }
+
+    #serializable(data) {
+        if (data) {
+            if (typeof data === 'function') {
+                return false
+            }
+            if (typeof data === 'object') {
+                if (data instanceof Promise) {
+                    return false
+                }
+                const keys = Object.keys(data)
+                for (let key of keys) {
+                    if (!this.#serializable(data[key])) {
+                        return false
+                    }
+                }
+            }
+        }
+        return true
     }
 }
