@@ -1,5 +1,5 @@
-import { Connection } from "../libraries/database/IndexedDataBase/Connection.mjs"
 import { Query } from "../libraries/database/IndexedDataBase/Query.mjs"
+import { Connection } from "../libraries/database/IndexedDataBase/Connection.mjs"
 
 export class File {
 
@@ -90,9 +90,22 @@ export class File {
 
     static async glob(path = '/*') {
         const level = path.split('/').length
+        if (level === 2) {
+            return [
+                new File({
+                    path: '/storage'
+                }),
+                new File({
+                    path: '/temporary'
+                }),
+            ]
+        }
+        if (path.substring(path.length - 1) === '*') {
+            path = path.substring(0, path.length - 1)
+        }
         const query = Query.connection('storage')
         query.from('files')
-        query.where(Query.upperBound('path', path))
+        query.where(Query.lowerBound('path', path))
         query.having(value => {
             return value && value.path && value.path.split('/').length === level
         })
@@ -119,6 +132,28 @@ export class File {
                 })
             }
             File.#externals.push(this)
+        } else {
+            if (stream.id) {
+                this.#id = stream.id
+            }
+            if (stream.path) {
+                this.#path = stream.path
+            }
+            if (stream.size) {
+                this.#size = stream.size
+            }
+            if (stream.type) {
+                this.#type = stream.type
+            }
+            if (stream.created) {
+                this.#created = stream.created
+            }
+            if (stream.deleted) {
+                this.#deleted = stream.deleted
+            }
+            if (stream.updated) {
+                this.#updated = stream.updated
+            }
         }
     }
 
@@ -193,6 +228,10 @@ export class File {
         if (this.#handle && this.#handle.name) {
             return this.#handle.name
         }
+        if (this.#path) {
+            const list = this.#path.split('/')
+            return list[list.length - 1]
+        }
         return ''
     }
 
@@ -227,7 +266,33 @@ export class File {
         return new Promise(async (resolve, reject) => {
             if (this.#file && this.#file.text) {
                 resolve(await this.#file.text())
-            } else {
+            } else if (this.#id) {
+                const query = Query.connection('storage')
+                query.from('files_content')
+                query.where(Query.equal('file_id', this.#id))
+                const file = await query.fetch()
+                console.log(file)
+                if (!file) {
+                    const time = (new Date()).getTime()
+                    query = new Query(connection)
+                    query.from('files')
+                    const id = await query.add({
+                        path: path,
+                        size: this.size,
+                        type: this.type,
+                        deleted: false,
+                        created: time,
+                        updated: time,
+                    })
+                    query = new Query(connection)
+                    await query.add({
+                        file_id: id,
+                        content: content,
+                    })
+                    result = new File()
+                    result.#id = id
+                    result.#path = path
+                }
                 reject(new Error('undefined file'))
             }
         })

@@ -1,6 +1,11 @@
 export class Cursor {
 
     /**
+     * @var {Event}
+     */
+    #event
+
+    /**
      * @var {Error}
      */
     #error
@@ -11,56 +16,60 @@ export class Cursor {
     #queue
 
     /**
-     * @var {bool}
+     * @var {IDBRequest}
      */
-    #started
-
-    /**
-     * @var {bool}
-     */
-    #finalized
+    #request
 
     /**
      * @param {IDBRequest} request 
      */
     constructor(request) {
         this.#queue = []
-        this.#started = false
-        this.#finalized = false
-        request.onerror = event => {
+        this.#request = request
+        this.#request.onerror = event => {
             this.#error = new Error('error cursor')
-            this.#finalized = true
-            console.log(event)
-        }
-        request.onsuccess = event => {
-            if (this.#started && !this.#finalized) {
-                if (request.result) {
-                    this.#queue.push(request.result.value)
-                    request.result.continue()
-                } else {
-                    this.#finalized = true
-                }
+            for (let reject of this.#queue) {
+                reject(this.#error)
             }
             console.log(event)
+        }
+        this.#request.onsuccess = event => {
+            if (this.#queue.length > 0) {
+                const cursor = event.target.result
+                const resolve = this.#queue.shift()
+                if (cursor) {
+                    cursor.continue()
+                    resolve(cursor.value)
+                } else {
+                    resolve(null)
+                }
+            } else {
+                this.#event = event
+            }
         }
     }
 
     fetch() {
-        this.#started = true
         return new Promise(async (resolve, reject) => {
             if (this.#error) {
                 reject(this.#error)
-            } else {
-                let value = null
-                while (!this.#finalized) {
-                    if (this.#queue.length === 0) {
-                        await this.#wait(1)
-                    } else {
-                        value = this.#queue.shift()
-                        break
-                    }
+            } else if (this.#event) {
+                const cursor = this.#event.target.result
+                this.#event = null
+                if (cursor.value) {
+                    cursor.continue()
+                    resolve(cursor.value)
+                } else {
+                    resolve(null)
                 }
-                resolve(value)
+            } else {
+                this.#queue.push(value => {
+                    if (value && value instanceof Error) {
+                        reject(value)
+                    } else {
+                        resolve(value)
+                    }
+                })
             }
         })
     }

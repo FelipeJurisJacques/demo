@@ -1,6 +1,5 @@
-import { Window } from "../widget/Window.mjs";
-import { Contact } from "../widget/Contact.mjs";
 import { File } from "../utils/File.mjs";
+import { Window } from "../widget/Window.mjs";
 
 export function Explorer() {
     File.glob().then(files => {

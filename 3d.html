@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exemplo WebGL sem Bibliotecas</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="webgl-canvas"></canvas>
+    <script>
+        // Função para inicializar o contexto WebGL
+        function initWebGL(canvas) {
+            var gl = canvas.getContext("webgl");
+
+            if (!gl) {
+                console.error("Não foi possível inicializar o WebGL. Seu navegador pode não oferecer suporte.");
+                return null;
+            }
+
+            return gl;
+        }
+
+        // Função para compilar shaders
+        function compileShader(gl, source, type) {
+            var shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error("Erro ao compilar shader:", gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+
+            return shader;
+        }
+
+        // Função para criar e linkar o programa de shader
+        function createProgram(gl, vertexShader, fragmentShader) {
+            var program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error("Não foi possível linkar o programa de shader:", gl.getProgramInfoLog(program));
+                gl.deleteProgram(program);
+                return null;
+            }
+
+            return program;
+        }
+
+        // Defina shaders
+        var vertexShaderSource = `
+            attribute vec4 a_position;
+            void main() {
+                gl_Position = a_position;
+            }
+        `;
+
+        var fragmentShaderSource = `
+            precision mediump float;
+            void main() {
+                gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+            }
+        `;
+
+        // Inicialize o contexto WebGL
+        var canvas = document.getElementById("webgl-canvas");
+        var gl = initWebGL(canvas);
+
+        if (gl) {
+            // Compile shaders
+            var vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
+            var fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
+
+            // Crie e linke o programa de shader
+            var program = createProgram(gl, vertexShader, fragmentShader);
+
+            // Use o programa de shader
+            gl.useProgram(program);
+
+            // Crie um buffer para o triângulo
+            var positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            var vertices = new Float32Array([
+                0.0,  1.0,
+               -1.0, -1.0,
+                1.0, -1.0,
+            ]);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            // Obtenha a localização do atributo a_position
+            var positionLocation = gl.getAttribLocation(program, "a_position");
+
+            // Habilitar o atributo a_position
+            gl.enableVertexAttribArray(positionLocation);
+
+            // Aponte um atributo a_position para o buffer
+            gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+            // Limpe o canvas e desenhe o triângulo
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+    </script>
+</body>
+</html>

@@ -125,12 +125,30 @@ export class Query {
         this.#having = callback
     }
 
+    async find(id) {
+        if (!this.#transaction) {
+            await this.#connection.open()
+            this.#transaction = this.#connection.transaction(this.#table)
+        }
+        const index = this.#transaction.storage(this.#table)
+        if (this.#contains(this.#transaction.names, `${this.#table}_data`)) {
+            const storage = this.#transaction.storage(`${this.#table}_data`)
+            const content = await storage.get(value[data.key])
+            if (content) {
+                for (let key in content) {
+                    value[key] = content[key]
+                }
+            }
+        } else {
+            return await index.get(id)
+        }
+    }
+
     async add(value) {
         if (!this.#transaction) {
             await this.#connection.open()
             this.#transaction = this.#connection.transaction([
                 this.#table,
-                `${this.#table}_data`,
             ], true)
         }
         const index = this.#transaction.storage(this.#table)
@@ -159,7 +177,7 @@ export class Query {
         return new Promise(async resolve => {
             await this.#start()
             let value = null
-            while (true) {
+            while (!value) {
                 let v = await this.#cursor.fetch()
                 if (!v) {
                     break
@@ -168,13 +186,10 @@ export class Query {
                 }
             }
             if (value) {
-                for (let storage of this.#transaction.storages) {
-                    if (
-                        storage.key
-                        && value[storage.key]
-                        && !storage.name.endsWith('_index')
-                    ) {
-                        let content = storage.get(value[data.key])
+                if (this.#contains(this.#transaction.names, `${this.#table}_data`)) {
+                    const storage = this.#transaction.storage(`${this.#table}_data`)
+                    const content = await storage.get(value[data.key])
+                    if (content) {
                         for (let key in content) {
                             value[key] = content[key]
                         }

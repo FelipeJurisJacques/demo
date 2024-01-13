@@ -43,8 +43,7 @@ export class ObjectStore {
      * @returns {Index}
      */
     index(key) {
-        const index = this.#storage.index(key)
-        return new Index(index)
+        return new Index(this.#storage.index(key))
     }
 
     /**
