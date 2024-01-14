@@ -6,6 +6,11 @@ export class WebGl {
     #element
 
     /**
+     * @var {Array}
+     */
+    #renderable
+
+    /**
      * @param {URL} from
      * @returns {Promise<string>}
     */
@@ -19,6 +24,11 @@ export class WebGl {
     */
     constructor(canvas) {
         this.#element = canvas
+        this.#renderable = []
+    }
+
+    push(model) {
+        this.#renderable.push(model)
     }
 
     /**
@@ -34,11 +44,11 @@ export class WebGl {
         gl.useProgram(program)
         const positionBuffer = gl.createBuffer()
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-        const vertices = new Float32Array([
-            0.0, 1.0,
-            -1.0, -1.0,
-            1.0, -1.0,
-        ])
+        const list = []
+        for (let model of this.#renderable) {
+            list.push(model.render())
+        }
+        const vertices = new Float32Array(list)
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
         const positionLocation = gl.getAttribLocation(program, 'a_position')
         gl.enableVertexAttribArray(positionLocation)
