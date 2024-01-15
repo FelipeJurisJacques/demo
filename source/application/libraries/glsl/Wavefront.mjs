@@ -13,6 +13,15 @@ export class Wavefront {
     }
 
     render() {
+        return [
+            -1.0, -1.0, -1.0,
+            -1.0, -1.0,  1.0,
+            -1.0,  1.0, -1.0,
+            -1.0,  1.0,  1.0,
+             1.0, -1.0, -1.0,
+             1.0, -1.0,  1.0,
+             1.0,  1.0, -1.0,
+             1.0,  1.0,  1.0,]
         const vertices = []
         const lines = this.#content.split('\n')
         lines.forEach(function (line) {

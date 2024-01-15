@@ -13,13 +13,59 @@
 
         canvas {
             display: block;
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
 
 <body>
-    <canvas id="webgl-canvas"></canvas>
+    <canvas id="webgl-canvas" width="720" height="720"></canvas>
     <script src="./gl-matrix-min.js"></script>
+    
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        // uniform é o mesmo pra figura inteira
+        uniform float rotacao;
+        uniform mat4 u_matrix;
+        
+        // attribute é um pra cada vértice
+        attribute vec3 vPosition;
+        attribute vec3 vColor;
+        
+        // varying é um pra cada pixel (fragmento)
+        varying vec3 fColor;
+        varying float z;
+        
+        void main() {
+           // Gira os vértices
+           float novoX = cos(rotacao)*vPosition.x + sin(rotacao)*vPosition.z;
+           float novoZ = sin(rotacao)*vPosition.x + cos(rotacao)*vPosition.z;
+           
+           // Translada e projeta em 2D (recebe a projeção em perspectiva do JS)
+           vec4 trans = vec4(0.0, 0.0, 6.0, 0.0);
+           gl_Position = u_matrix * (vec4(novoX, vPosition.y, novoZ, 1.0) - trans);
+           
+           // Envia dados para o fragment shader (serão interpolados)
+           z = novoZ*abs(novoZ);
+           fColor = vColor;
+        }
+    </script>
+        
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+    
+        varying vec3 fColor;
+        varying float z;
+        
+        void main() {
+           // Quanto mais próximo da câmera, mais claro
+           float r = fColor.r/2.0 + z/2.0;
+           float g = fColor.g/2.0 + z/2.0;
+           float b = fColor.b/2.0 + z/2.0;
+        
+           gl_FragColor = vec4(r, g, b, 1.0 );
+        }
+    </script>
     <script src="./sample.js"></script>
 </body>
 

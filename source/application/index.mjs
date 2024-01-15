@@ -19,7 +19,7 @@ Builder.body({
 async function render(canvas) {
     const gl = new WebGl(canvas)
     gl.push(new Wavefront(
-        await WebGl.import(new URL(`${location.origin}/source/assets/wavefront/sample.obj`))
+        await WebGl.import(new URL(`${location.origin}/source/assets/wavefront/cube/cube.obj`))
     ))
     gl.render(
         await WebGl.import(new URL(`${location.origin}/source/shader/vertex.glsl`)),
