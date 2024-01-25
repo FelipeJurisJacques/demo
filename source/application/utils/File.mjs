@@ -1,5 +1,4 @@
-import { Query } from "../libraries/database/IndexedDataBase/Query.mjs"
-import { Connection } from "../libraries/database/IndexedDataBase/Connection.mjs"
+import { Connection } from "../libraries/StorageDataBase/Connection.mjs"
 
 export class File {
 
@@ -68,6 +67,39 @@ export class File {
      */
     #updated
 
+    static async install() {
+        const folders = [
+            'mmt',
+            'tmp',
+        ]
+        const transaction = await this.#transaction
+        let query = transaction.select()
+        query.where('parent_id', '=', 0)
+        const files = await query.all()
+        const time = (new Date()).getTime()
+        for (let folder of folders) {
+            let has = false
+            for (let file of files) {
+                if (folder === file.name) {
+                    has = true
+                    break
+                }
+            }
+            if (!has) {
+                transaction.insert().add({
+                    name: folder,
+                    size: null,
+                    type: null,
+                    deleted: false,
+                    created: time,
+                    updated: time,
+                    parent_id: 0,
+                })
+            }
+        }
+        console.log(files)
+    }
+
     static files(stream) {
         const data = []
         if (typeof stream === 'object') {
@@ -89,28 +121,22 @@ export class File {
     }
 
     static async glob(path = '/*') {
-        const level = path.split('/').length
-        if (level === 2) {
-            return [
-                new File({
-                    path: '/storage'
-                }),
-                new File({
-                    path: '/temporary'
-                }),
-            ]
+        const names = path.split('/')
+        const level = names.length - 2
+        if (level < 0) {
+            return []
         }
-        if (path.substring(path.length - 1) === '*') {
-            path = path.substring(0, path.length - 1)
-        }
-        const query = Query.connection('storage')
+        const transaction = await File.#transaction
+        const query = transaction.select()
         query.from('files')
-        query.where(Query.lowerBound('path', path))
-        query.having(value => {
-            return value && value.path && value.path.split('/').length === level
-        })
-        const file = await query.fetch()
-        console.log(file)
+        if (level === 0) {
+            query.where('parent_id', '=', 0)
+            const file = await query.all()
+            if (file.length === 0) {
+
+            }
+            console.log(file)
+        }
     }
 
     constructor(stream = null) {
@@ -411,5 +437,13 @@ export class File {
             connection.close()
         }
         return result
+    }
+
+    static get #connection() {
+        return Connection.from('storage')
+    }
+
+    static get #transaction() {
+        return this.#connection.transaction('files')
     }
 }

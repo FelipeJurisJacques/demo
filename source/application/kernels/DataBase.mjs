@@ -14,9 +14,8 @@ connection.open(1, function (event) {
             files.column('hash', {
                 [Schema.INDEX]: true,
             })
-            files.column('path', {
+            files.column('name', {
                 [Schema.INDEX]: true,
-                [Schema.UNIQUE]: true,
             })
             files.column('type', {
                 [Schema.INDEX]: true,
@@ -25,6 +24,9 @@ connection.open(1, function (event) {
                 [Schema.INDEX]: true,
             })
             files.column('updated', {
+                [Schema.INDEX]: true,
+            })
+            files.column('parent_id', {
                 [Schema.INDEX]: true,
             })
             files.save()
