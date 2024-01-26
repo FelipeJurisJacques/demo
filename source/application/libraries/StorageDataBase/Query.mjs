@@ -48,6 +48,9 @@ export class Query {
         return true
     }
 
+    /**
+     * @param {IDBObjectStore[]} storages
+     */
     constructor(storages) {
         for (let storage of storages) {
             if (storage.name.slice(-5) === '_data') {

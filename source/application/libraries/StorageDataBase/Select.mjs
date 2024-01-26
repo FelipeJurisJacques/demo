@@ -70,6 +70,10 @@ export class Select {
      */
     #request
 
+    /**
+     * @param {IDBObjectStore} storage
+     * @param {IDBObjectStore} data
+     */
     constructor(storage, data) {
         this.#storage = storage
         this.#data = data
@@ -118,6 +122,36 @@ export class Select {
     }
 
     fetch() {
+        return new Promise(async (resolve, reject) => {
+            while (true) {
+                let value = await this.#fetch()
+                if (value) {
+                    if (!this.#having || this.#having(value)) {
+                        const id = value[this.#storage.keyPath]
+                        const request = this.#data.get(id)
+                        request.onerror = event => {
+                            reject(event.target.error ? event.target.error : new Error('Error to get'))
+                        }
+                        request.onsuccess = event => {
+                            if (event.target.result) {
+                                const data = event.target.result
+                                for (let key in data) {
+                                    value[key] = data[key]
+                                }
+                            }
+                            resolve(value)
+                        }
+                        break
+                    }
+                } else {
+                    resolve(null)
+                    break
+                }
+            }
+        })
+    }
+
+    #fetch() {
         return new Promise((resolve, reject) => {
             if (!this.#request) {
                 this.#count = 0
@@ -144,8 +178,15 @@ export class Select {
                         const cursor = event.target.result
                         const resolve = this.#queue.shift()
                         if (cursor) {
-                            cursor.continue()
-                            resolve(cursor.value)
+                            if (cursor.value) {
+                                this.#count++
+                                if (!this.#limit || this.#limit > this.#count) {
+                                    cursor.continue()
+                                }
+                                resolve(cursor.value)
+                            } else {
+                                resolve(null)
+                            }
                         } else {
                             resolve(null)
                         }
@@ -159,9 +200,16 @@ export class Select {
             } else if (this.#event) {
                 const cursor = this.#event.target.result
                 this.#event = null
-                if (cursor.value) {
-                    cursor.continue()
-                    resolve(cursor.value)
+                if (cursor) {
+                    if (cursor.value) {
+                        this.#count++
+                        if (!this.#limit || this.#limit > this.#count) {
+                            cursor.continue()
+                        }
+                        resolve(cursor.value)
+                    } else {
+                        resolve(null)
+                    }
                 } else {
                     resolve(null)
                 }
@@ -178,18 +226,16 @@ export class Select {
     }
 
     async all() {
-        return new Promise(async resolve => {
-            const list = []
-            let value
-            while (true) {
-                value = await this.fetch()
-                if (value) {
-                    list.push(value)
-                } else {
-                    break
-                }
+        let value
+        const list = []
+        while (true) {
+            value = await this.fetch()
+            if (value) {
+                list.push(value)
+            } else {
+                break
             }
-            resolve(list)
-        })
+        }
+        return list
     }
 }

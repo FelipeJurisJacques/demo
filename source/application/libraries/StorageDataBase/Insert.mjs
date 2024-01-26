@@ -12,6 +12,10 @@ export class Insert {
      */
     #storage
 
+    /**
+     * @param {IDBObjectStore} storage
+     * @param {IDBObjectStore} data
+     */
     constructor(storage, data) {
         this.#storage = storage
         this.#data = data

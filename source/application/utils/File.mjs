@@ -71,33 +71,39 @@ export class File {
         const folders = [
             'mmt',
             'tmp',
+            'home',
         ]
         const transaction = await this.#transaction
-        let query = transaction.select()
-        query.where('parent_id', '=', 0)
-        const files = await query.all()
-        const time = (new Date()).getTime()
-        for (let folder of folders) {
-            let has = false
-            for (let file of files) {
-                if (folder === file.name) {
-                    has = true
-                    break
+        try {
+            let query = transaction.select()
+            query.where('parent_id', '=', 0)
+            const files = await query.all()
+            const time = (new Date()).getTime()
+            for (let folder of folders) {
+                let has = false
+                for (let file of files) {
+                    if (folder === file.name) {
+                        has = true
+                        break
+                    }
+                }
+                if (!has) {
+                    await transaction.insert().add({
+                        name: folder,
+                        size: null,
+                        type: null,
+                        deleted: false,
+                        created: time,
+                        updated: time,
+                        parent_id: 0,
+                    })
                 }
             }
-            if (!has) {
-                transaction.insert().add({
-                    name: folder,
-                    size: null,
-                    type: null,
-                    deleted: false,
-                    created: time,
-                    updated: time,
-                    parent_id: 0,
-                })
-            }
+            transaction.commit()
+        } catch (error) {
+            console.error(error)
+            transaction.abort()
         }
-        console.log(files)
     }
 
     static files(stream) {
