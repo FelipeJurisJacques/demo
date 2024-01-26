@@ -8,6 +8,10 @@ export class Query {
      */
     #storage
 
+    /**
+     * @param {object} data
+     * @returns {boolean}
+     */
     static empty(data) {
         if (data) {
             if (typeof data === 'object') {

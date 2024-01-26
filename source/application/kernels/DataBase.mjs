@@ -23,10 +23,10 @@ connection.open(1, function (event) {
             files.column('size', {
                 [Schema.INDEX]: true,
             })
-            files.column('updated', {
+            files.column('parent', {
                 [Schema.INDEX]: true,
             })
-            files.column('parent_id', {
+            files.column('updated', {
                 [Schema.INDEX]: true,
             })
             files.save()

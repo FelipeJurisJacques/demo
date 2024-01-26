@@ -1,6 +1,17 @@
 import { Connection } from "../libraries/StorageDataBase/Connection.mjs"
+import { File as FileModel } from "../models/File.mjs"
 
 export class File {
+
+    /**
+     * @var {number}
+     */
+    static #mmt
+
+    /**
+     * @var {number}
+     */
+    static #tmp
 
     /**
      * @var {File[]}
@@ -73,30 +84,40 @@ export class File {
             'tmp',
             'home',
         ]
-        const transaction = await this.#transaction
+        const transaction = await this.#connection.transaction('files')
         try {
             let query = transaction.select()
-            query.where('parent_id', '=', 0)
+            query.where('parent', '=', 0)
             const files = await query.all()
             const time = (new Date()).getTime()
             for (let folder of folders) {
-                let has = false
+                let id = null
                 for (let file of files) {
                     if (folder === file.name) {
-                        has = true
+                        id = file.id
                         break
                     }
                 }
-                if (!has) {
-                    await transaction.insert().add({
+                if (!id) {
+                    id = await transaction.insert().add({
                         name: folder,
                         size: null,
                         type: null,
+                        parent: 0,
                         deleted: false,
                         created: time,
                         updated: time,
-                        parent_id: 0,
                     })
+                }
+                switch (folder) {
+                    case 'mmt':
+                        this.#mmt = id
+                        break
+                    case 'tmp':
+                        this.#tmp = id
+                        break
+                    default:
+                        break
                 }
             }
             transaction.commit()
@@ -132,17 +153,22 @@ export class File {
         if (level < 0) {
             return []
         }
-        const transaction = await File.#transaction
+        const result = []
+        FileModel.find()
+        let test = new FileModel()
+        test.save()
+        const transaction = await this.#connection.transaction('files')
         const query = transaction.select()
-        query.from('files')
         if (level === 0) {
-            query.where('parent_id', '=', 0)
-            const file = await query.all()
-            if (file.length === 0) {
-
+            query.where('parent', '=', 0)
+            const files = await query.all()
+            for (let file of files) {
+                file.path = `/${file.name}`
+                console.log(file)
+                result.push(new File(file))
             }
-            console.log(file)
         }
+        return result
     }
 
     constructor(stream = null) {
@@ -165,27 +191,14 @@ export class File {
             }
             File.#externals.push(this)
         } else {
-            if (stream.id) {
-                this.#id = stream.id
-            }
-            if (stream.path) {
-                this.#path = stream.path
-            }
-            if (stream.size) {
-                this.#size = stream.size
-            }
-            if (stream.type) {
-                this.#type = stream.type
-            }
-            if (stream.created) {
-                this.#created = stream.created
-            }
-            if (stream.deleted) {
-                this.#deleted = stream.deleted
-            }
-            if (stream.updated) {
-                this.#updated = stream.updated
-            }
+            this.#id = stream.id
+            this.#path = stream.path
+            this.#size = stream.size
+            this.#type = stream.type
+            this.#parent = stream.parent
+            this.#created = stream.created
+            this.#deleted = stream.deleted
+            this.#updated = stream.updated
         }
     }
 
@@ -290,6 +303,9 @@ export class File {
     get modified() {
         if (this.#file && this.#file.lastModified) {
             return new Date(this.#file.lastModified)
+        }
+        if (this.#updated) {
+            return this.#updated
         }
         return null
     }
@@ -447,9 +463,5 @@ export class File {
 
     static get #connection() {
         return Connection.from('storage')
-    }
-
-    static get #transaction() {
-        return this.#connection.transaction('files')
     }
 }
