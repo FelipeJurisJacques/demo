@@ -1,16 +1,6 @@
 export class Select {
 
     /**
-     * @var {IDBObjectStore}
-     */
-    #data
-
-    /**
-     * @var {string[]}
-     */
-    #from
-
-    /**
      * @var {number}
      */
     #count
@@ -72,11 +62,9 @@ export class Select {
 
     /**
      * @param {IDBObjectStore} storage
-     * @param {IDBObjectStore} data
      */
-    constructor(storage, data) {
+    constructor(storage) {
         this.#storage = storage
-        this.#data = data
     }
 
     /**
@@ -122,25 +110,15 @@ export class Select {
     }
 
     fetch() {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async resolve => {
+            if (!this.#request) {
+                this.#cursor()
+            }
             while (true) {
                 let value = await this.#fetch()
                 if (value) {
                     if (!this.#having || this.#having(value)) {
-                        const id = value[this.#storage.keyPath]
-                        const request = this.#data.get(id)
-                        request.onerror = event => {
-                            reject(event.target.error ? event.target.error : new Error('Error to get'))
-                        }
-                        request.onsuccess = event => {
-                            if (event.target.result) {
-                                const data = event.target.result
-                                for (let key in data) {
-                                    value[key] = data[key]
-                                }
-                            }
-                            resolve(value)
-                        }
+                        resolve(value)
                         break
                     }
                 } else {
@@ -153,48 +131,6 @@ export class Select {
 
     #fetch() {
         return new Promise((resolve, reject) => {
-            if (!this.#request) {
-                this.#count = 0
-                this.#queue = []
-                if (
-                    this.#column
-                    && (this.#storage.keyPath && this.#storage.keyPath !== this.#column)
-                ) {
-                    this.#index = this.#storage.index(this.#column)
-                }
-                if (this.#range) {
-                    this.#request = this.#index ? this.#index.openCursor(this.#range) : this.#storage.openCursor(this.#range)
-                } else {
-                    this.#request = this.#index ? this.#index.openCursor() : this.#storage.openCursor()
-                }
-                this.#request.onerror = event => {
-                    this.#error = event.target.error ? event.target.error : new Error('Error to fetch')
-                    for (let reject of this.#queue) {
-                        reject(this.#error)
-                    }
-                }
-                this.#request.onsuccess = event => {
-                    if (this.#queue.length > 0) {
-                        const cursor = event.target.result
-                        const resolve = this.#queue.shift()
-                        if (cursor) {
-                            if (cursor.value) {
-                                this.#count++
-                                if (!this.#limit || this.#limit > this.#count) {
-                                    cursor.continue()
-                                }
-                                resolve(cursor.value)
-                            } else {
-                                resolve(null)
-                            }
-                        } else {
-                            resolve(null)
-                        }
-                    } else {
-                        this.#event = event
-                    }
-                }
-            }
             if (this.#error) {
                 reject(this.#error)
             } else if (this.#event) {
@@ -226,16 +162,57 @@ export class Select {
     }
 
     async all() {
-        let value
         const list = []
         while (true) {
-            value = await this.fetch()
-            if (value) {
-                list.push(value)
-            } else {
+            let value = await this.fetch()
+            if (!value) {
                 break
             }
+            list.push(value)
         }
         return list
+    }
+
+    #cursor() {
+        this.#count = 0
+        this.#queue = []
+        if (
+            this.#column
+            && (this.#storage.keyPath && this.#storage.keyPath !== this.#column)
+        ) {
+            this.#index = this.#storage.index(this.#column)
+        }
+        if (this.#range) {
+            this.#request = this.#index ? this.#index.openCursor(this.#range) : this.#storage.openCursor(this.#range)
+        } else {
+            this.#request = this.#index ? this.#index.openCursor() : this.#storage.openCursor()
+        }
+        this.#request.onerror = event => {
+            this.#error = event.target.error ? event.target.error : new Error('Error to fetch')
+            for (let reject of this.#queue) {
+                reject(this.#error)
+            }
+        }
+        this.#request.onsuccess = event => {
+            if (this.#queue.length > 0) {
+                const cursor = event.target.result
+                const resolve = this.#queue.shift()
+                if (cursor) {
+                    if (cursor.value) {
+                        this.#count++
+                        if (!this.#limit || this.#limit > this.#count) {
+                            cursor.continue()
+                        }
+                        resolve(cursor.value)
+                    } else {
+                        resolve(null)
+                    }
+                } else {
+                    resolve(null)
+                }
+            } else {
+                this.#event = event
+            }
+        }
     }
 }

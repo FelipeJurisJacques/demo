@@ -1,6 +1,4 @@
-import { Insert } from "./Insert.mjs"
 import { Query } from "./Query.mjs"
-import { Select } from "./Select.mjs"
 
 export class Transaction {
 
@@ -106,15 +104,16 @@ export class Transaction {
     #query(storage = '') {
         const names = this.names
         if (!storage) {
-            if (
-                names.length > 0
-                && names.length < 3
-                && `${names[0]}_data` === names[1]
-            ) {
-                storage = names[0]
-            } else {
-                throw new Error('storage name invalid')
+            if (names.length === 1) {
+                if (this.#storages.length === 0) {
+                    const statement = new Query(this.#transaction.objectStore(names[0]))
+                    this.#storages.push(statement)
+                    return statement
+                } else {
+                    return this.#storages[0]
+                }
             }
+            throw new Error('storage name invalid')
         }
         if (this.#storages.length > 0) {
             for (let query of this.#storages) {
@@ -123,18 +122,14 @@ export class Transaction {
                 }
             }
         }
-        const storages = []
         for (let name of names) {
-            if (name === storage || name === `${storage}_data`) {
-                storages.push(this.#transaction.objectStore(name))
+            if (name === storage) {
+                const statement = new Query(this.#transaction.objectStore(name))
+                this.#storages.push(statement)
+                return statement
             }
         }
-        if (storages.length === 0) {
-            throw new Error(`${storage} not found`)
-        }
-        const statement = new Query(storages)
-        this.#storages.push(statement)
-        return statement
+        throw new Error(`${storage} not found`)
     }
 
     select(storage) {

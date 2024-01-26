@@ -6,11 +6,6 @@ export class Query {
     /**
      * @var {IDBObjectStore}
      */
-    #data
-
-    /**
-     * @var {IDBObjectStore}
-     */
     #storage
 
     static empty(data) {
@@ -49,16 +44,10 @@ export class Query {
     }
 
     /**
-     * @param {IDBObjectStore[]} storages
+     * @param {IDBObjectStore} storage
      */
-    constructor(storages) {
-        for (let storage of storages) {
-            if (storage.name.slice(-5) === '_data') {
-                this.#data = storage
-            } else {
-                this.#storage = storage
-            }
-        }
+    constructor(storage) {
+        this.#storage = storage
     }
 
     get name() {
@@ -66,10 +55,10 @@ export class Query {
     }
 
     select() {
-        return new Select(this.#storage, this.#data)
+        return new Select(this.#storage)
     }
 
     insert() {
-        return new Insert(this.#storage, this.#data)
+        return new Insert(this.#storage)
     }
 }

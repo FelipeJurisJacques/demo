@@ -221,7 +221,7 @@ export class Connection {
         const list = typeof names === 'string' ? [names] : names
         for (let name of list) {
             for (let store of this.#database.objectStoreNames) {
-                if (store === name || store === `${name}_data`) {
+                if (store === name) {
                     n.push(store)
                 }
             }
