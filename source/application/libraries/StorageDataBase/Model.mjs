@@ -20,33 +20,44 @@ export class Model {
     static get table() {
         throw new Error('implements')
     }
-    
+
     static get database() {
         throw new Error('implements')
     }
 
-    constructor() {
+    constructor() { }
 
+    /**
+     * @returns {object}
+     */
+    serialize() {
+        const data = {}
+        for (let key in this) {
+            data[key] = this[key]
+        }
+        return data
     }
 
     /**
      * @returns {Promise<boolean>}
      */
     async save() {
-        const data = {}
-        for (let key in this) {
-            data[key] = this[key]
-        }
+        const data = this.serialize()
         const connection = Connection.from(this.constructor.database)
         const transaction = await connection.transaction(this.constructor.table, false)
         const statement = transaction.query(this.table)
         const key = statement.key
-        if (!key || !data[key]) {
+        if (!key) {
+            await statement.insert().add(data)
+            return true
+        } else if (!data[key]) {
             const id = await statement.insert().add(data)
             if (id) {
                 this[key] = id
                 return true
             }
+        } else {
+
         }
         return false
     }

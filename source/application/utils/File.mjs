@@ -100,7 +100,7 @@ export class File {
                     }
                 }
                 if (!model) {
-                    let model = new FileModel()
+                    model = new FileModel()
                     model.name = folder
                     model.size = null
                     model.type = null
