@@ -214,16 +214,12 @@ export class Connection {
      * @returns {Promise<Transaction>}
      */
     async transaction(names, write = true) {
+        const origins = this.#origins()
         if (!this.opened) {
             await this.open()
         }
-        if (this.#transactions.length > 0) {
-            const error = new Error()
-            const trace = error.stack
-            console.log(trace)
-        }
-        let n = []
         const list = typeof names === 'string' ? [names] : names
+        let n = []
         for (let name of list) {
             for (let store of this.#database.objectStoreNames) {
                 if (store === name) {
@@ -237,10 +233,35 @@ export class Connection {
         if (n.length > 1) {
             n = n.sort()
         }
+        if (this.#transactions.length > 0) {
+            for (let transaction of this.#transactions) {
+                if (transaction.done) {
+                    continue
+                }
+                let has = true
+                for (let name of n) {
+                    if (!transaction.names.includes(name)) {
+                        has = false
+                    }
+                }
+                if (!has) {
+                    continue
+                }
+                for (let origin of origins) {
+                    if (
+                        origin.at === transaction.origin.at
+                        && origin.file === transaction.origin.file
+                        && origin.line > transaction.origin.line
+                    ) {
+                        return transaction
+                    }
+                }
+            }
+        }
         const statement = new Transaction(this.#database.transaction(
             n,
             write ? 'readwrite' : 'readonly'
-        ))
+        ), origins[0])
         this.#transactions.push(statement)
         return statement
     }
@@ -256,5 +277,38 @@ export class Connection {
         const statement = new Query(this.#database)
         statement.select(columns)
         return statement
+    }
+
+    #origins() {
+        const error = new Error()
+        const list = []
+        for (let trace of error.stack.split('\n')) {
+            trace = trace.trim()
+            if (!trace.startsWith('at')) {
+                continue
+            }
+            let parts = trace.split(' ')
+            let item = {
+                at: '',
+                line: '',
+                file: '',
+            }
+            item.file = parts.pop()
+            item.at = parts.pop()
+            if (item.at.indexOf('.') < 0) {
+                continue
+            }
+            parts = item.at.split('.')
+            if (parts.shift() === this.constructor.name) {
+                continue
+            }
+            item.file = item.file.substring(1, item.file.length - 2)
+            parts = item.file.split(':')
+            parts.pop()
+            item.line = parseInt(parts.pop())
+            item.file = parts.join(':')
+            list.push(item)
+        }
+        return list
     }
 }

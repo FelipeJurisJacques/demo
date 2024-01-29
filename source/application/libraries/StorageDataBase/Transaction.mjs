@@ -9,8 +9,13 @@ export class Transaction {
 
     /**
      * @var {Error}
-     */
+    */
     #error
+
+    /**
+     * @var {object}
+     */
+    #origin
 
     /**
      * @var {Array<Query>}
@@ -23,9 +28,10 @@ export class Transaction {
     #transaction
 
     /**
-     * @param {IDBTransaction} transaction 
+     * @param {IDBTransaction} transaction
+     * @param {object|null} origin
      */
-    constructor(transaction) {
+    constructor(transaction, origin = null) {
         this.#done = false
         this.#error = null
         this.#storages = []
@@ -45,6 +51,9 @@ export class Transaction {
                 this.#error = event.target.error
             }
             this.#done = true
+        }
+        if (origin) {
+            this.#origin = origin
         }
     }
 
@@ -78,6 +87,13 @@ export class Transaction {
             list.push(name)
         }
         return list.length > 1 ? list.sort() : list
+    }
+
+    /**
+     * @returns {object}
+     */
+    get origin() {
+        return this.#origin
     }
 
     /**
