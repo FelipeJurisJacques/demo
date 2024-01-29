@@ -84,9 +84,12 @@ export class File {
             'tmp',
             'home',
         ]
-        const transaction = await this.#connection.transaction('files')
+        const connection = Connection.from(FileModel.database)
+        connection.transaction(FileModel.table, true)
         try {
-            let query = transaction.select()
+            const query = await FileModel.select()
+            console.log(query)
+            return
             query.where('parent', '=', 0)
             const files = await query.all()
             const time = (new Date()).getTime()
@@ -154,9 +157,6 @@ export class File {
             return []
         }
         const result = []
-        FileModel.find()
-        let test = new FileModel()
-        test.save()
         const transaction = await this.#connection.transaction('files')
         const query = transaction.select()
         if (level === 0) {

@@ -24,7 +24,7 @@ export class Connection {
     #interaction
 
     /**
-     * @var {Array<IndexedDataBaseTransaction>}
+     * @var {Array<Transaction>}
      */
     #transactions
 
@@ -204,7 +204,7 @@ export class Connection {
             }
         }
         const connection = new Connection(name)
-        this.#connections.push()
+        this.#connections.push(connection)
         return connection
     }
 
@@ -216,6 +216,11 @@ export class Connection {
     async transaction(names, write = true) {
         if (!this.opened) {
             await this.open()
+        }
+        if (this.#transactions.length > 0) {
+            const error = new Error()
+            const trace = error.stack
+            console.log(trace)
         }
         let n = []
         const list = typeof names === 'string' ? [names] : names
@@ -232,10 +237,12 @@ export class Connection {
         if (n.length > 1) {
             n = n.sort()
         }
-        return new Transaction(this.#database.transaction(
+        const statement = new Transaction(this.#database.transaction(
             n,
             write ? 'readwrite' : 'readonly'
         ))
+        this.#transactions.push(statement)
+        return statement
     }
 
     /**

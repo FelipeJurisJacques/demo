@@ -61,10 +61,19 @@ export class Select {
     #request
 
     /**
-     * @param {IDBObjectStore} storage
+     * @var {Model}
      */
-    constructor(storage) {
+    #prototype
+
+    /**
+     * @param {IDBObjectStore} storage
+     * @param {Model|null} prototype
+     */
+    constructor(storage, prototype = null) {
         this.#storage = storage
+        if (prototype) {
+            this.#prototype = prototype
+        }
     }
 
     /**
@@ -118,7 +127,15 @@ export class Select {
                 let value = await this.#fetch()
                 if (value) {
                     if (!this.#having || this.#having(value)) {
-                        resolve(value)
+                        if (this.#prototype) {
+                            const model = new this.#prototype.constructor()
+                            for (let key in value) {
+                                model[key] = value[key]
+                            }
+                            resolve(model)
+                        } else {
+                            resolve(value)
+                        }
                         break
                     }
                 } else {

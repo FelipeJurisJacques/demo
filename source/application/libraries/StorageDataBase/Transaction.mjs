@@ -98,15 +98,16 @@ export class Transaction {
     }
 
     /**
-     * @param {storage} name 
+     * @param {string} storage
+     * @param {Model|null} prototype
      * @returns {Query|null}
      */
-    #query(storage = '') {
+    #query(storage = '', prototype = null) {
         const names = this.names
         if (!storage) {
             if (names.length === 1) {
                 if (this.#storages.length === 0) {
-                    const statement = new Query(this.#transaction.objectStore(names[0]))
+                    const statement = new Query(this.#transaction.objectStore(names[0]), prototype)
                     this.#storages.push(statement)
                     return statement
                 } else {
@@ -124,12 +125,20 @@ export class Transaction {
         }
         for (let name of names) {
             if (name === storage) {
-                const statement = new Query(this.#transaction.objectStore(name))
+                const statement = new Query(this.#transaction.objectStore(name), prototype)
                 this.#storages.push(statement)
                 return statement
             }
         }
         throw new Error(`${storage} not found`)
+    }
+    /**
+     * @param {string} storage
+     * @param {Model|null} prototype
+     * @returns {Query}
+     */
+    query(storage, prototype = null) {
+        return this.#query(storage, prototype)
     }
 
     select(storage) {

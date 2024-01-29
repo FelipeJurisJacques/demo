@@ -9,6 +9,11 @@ export class Query {
     #storage
 
     /**
+     * @var {Model}
+     */
+    #prototype
+
+    /**
      * @param {object} data
      * @returns {boolean}
      */
@@ -49,9 +54,13 @@ export class Query {
 
     /**
      * @param {IDBObjectStore} storage
+     * @param {Model|null} prototype
      */
-    constructor(storage) {
+    constructor(storage, prototype = null) {
         this.#storage = storage
+        if (prototype) {
+            this.#prototype = prototype
+        }
     }
 
     get name() {
@@ -59,10 +68,10 @@ export class Query {
     }
 
     select() {
-        return new Select(this.#storage)
+        return new Select(this.#storage, this.#prototype)
     }
 
     insert() {
-        return new Insert(this.#storage)
+        return new Insert(this.#storage, this.#prototype)
     }
 }
