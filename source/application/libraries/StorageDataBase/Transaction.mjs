@@ -51,10 +51,12 @@ export class Transaction {
                 this.#error = event.target.error
             }
             this.#done = true
+            console.log('transaction closed')
         }
         if (origin) {
             this.#origin = origin
         }
+        console.log('transaction opened')
     }
 
     /**
@@ -148,6 +150,7 @@ export class Transaction {
         }
         throw new Error(`${storage} not found`)
     }
+
     /**
      * @param {string} storage
      * @param {Model|null} prototype

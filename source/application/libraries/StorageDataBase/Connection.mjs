@@ -253,6 +253,7 @@ export class Connection {
                         && origin.file === transaction.origin.file
                         && origin.line > transaction.origin.line
                     ) {
+                        console.log('transaction reutilized')
                         return transaction
                     }
                 }

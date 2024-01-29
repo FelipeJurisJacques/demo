@@ -195,7 +195,10 @@ export class Select {
         this.#queue = []
         if (
             this.#column
-            && (this.#storage.keyPath && this.#storage.keyPath !== this.#column)
+            && (!this.#storage.keyPath || (
+                this.#storage.keyPath
+                && this.#storage.keyPath !== this.#column
+            ))
         ) {
             this.#index = this.#storage.index(this.#column)
         }

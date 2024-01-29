@@ -63,6 +63,10 @@ export class Query {
         }
     }
 
+    get key() {
+        return this.#storage.keyPath
+    }
+
     get name() {
         return this.#storage.name
     }

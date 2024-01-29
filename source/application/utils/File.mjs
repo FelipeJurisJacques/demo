@@ -85,39 +85,37 @@ export class File {
             'home',
         ]
         const connection = Connection.from(FileModel.database)
-        connection.transaction(FileModel.table, true)
+        const transaction = await connection.transaction(FileModel.table, true)
         try {
             const query = await FileModel.select()
-            console.log(query)
-            return
             query.where('parent', '=', 0)
             const files = await query.all()
             const time = (new Date()).getTime()
             for (let folder of folders) {
-                let id = null
+                let model = null
                 for (let file of files) {
                     if (folder === file.name) {
-                        id = file.id
+                        model = file
                         break
                     }
                 }
-                if (!id) {
-                    id = await transaction.insert().add({
-                        name: folder,
-                        size: null,
-                        type: null,
-                        parent: 0,
-                        deleted: false,
-                        created: time,
-                        updated: time,
-                    })
+                if (!model) {
+                    let model = new FileModel()
+                    model.name = folder
+                    model.size = null
+                    model.type = null
+                    model.parent = 0
+                    model.deleted = false
+                    model.created = time
+                    model.updated = time
+                    await model.save()
                 }
                 switch (folder) {
                     case 'mmt':
-                        this.#mmt = id
+                        this.#mmt = model.id
                         break
                     case 'tmp':
-                        this.#tmp = id
+                        this.#tmp = model.id
                         break
                     default:
                         break

@@ -29,9 +29,25 @@ export class Model {
 
     }
 
-    save() {
-        const error = new Error()
-        console.log(error.stack)
-        console.log(this.constructor.table)
+    /**
+     * @returns {Promise<boolean>}
+     */
+    async save() {
+        const data = {}
+        for (let key in this) {
+            data[key] = this[key]
+        }
+        const connection = Connection.from(this.constructor.database)
+        const transaction = await connection.transaction(this.constructor.table, false)
+        const statement = transaction.query(this.table)
+        const key = statement.key
+        if (!key || !data[key]) {
+            const id = await statement.insert().add(data)
+            if (id) {
+                this[key] = id
+                return true
+            }
+        }
+        return false
     }
 }
