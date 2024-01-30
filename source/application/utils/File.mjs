@@ -1,4 +1,4 @@
-import { Connection } from "../libraries/StorageDataBase/Connection.mjs"
+import { IndexedDataBase } from "../libraries/idb/IndexedDataBase.mjs"
 import { File as FileModel } from "../models/File.mjs"
 
 export class File {
@@ -84,10 +84,10 @@ export class File {
             'tmp',
             'home',
         ]
-        const connection = Connection.from(FileModel.database)
-        const transaction = await connection.transaction(FileModel.table, true)
+        const connection = new IndexedDataBase(FileModel.database)
+        const transaction = connection.transaction(FileModel.table, true)
         try {
-            const query = await FileModel.select()
+            const query = FileModel.select()
             query.where('parent', '=', 0)
             const files = await query.all()
             const time = (new Date()).getTime()
@@ -155,14 +155,12 @@ export class File {
             return []
         }
         const result = []
-        const transaction = await this.#connection.transaction('files')
-        const query = transaction.select()
+        const query = await FileModel.select()
         if (level === 0) {
             query.where('parent', '=', 0)
             const files = await query.all()
             for (let file of files) {
                 file.path = `/${file.name}`
-                console.log(file)
                 result.push(new File(file))
             }
         }
@@ -188,7 +186,7 @@ export class File {
                 })
             }
             File.#externals.push(this)
-        } else {
+        } else if (stream instanceof FileModel) {
             this.#id = stream.id
             this.#path = stream.path
             this.#size = stream.size
@@ -198,6 +196,10 @@ export class File {
             this.#deleted = stream.deleted
             this.#updated = stream.updated
         }
+    }
+
+    get id() {
+        return this.#id
     }
 
     get isFile() {

@@ -1,4 +1,3 @@
-import { Insert } from "./Insert.mjs"
 import { Select } from "./Select.mjs"
 
 export class Query {
@@ -75,7 +74,25 @@ export class Query {
         return new Select(this.#storage, this.#prototype)
     }
 
-    insert() {
-        return new Insert(this.#storage, this.#prototype)
+    /**
+     * @param {object} data 
+     * @returns {Promise<int|null>}
+     */
+    insert(data) {
+        return new Promise((resolve, reject) => {
+            if (this.constructor.empty(data)) {
+                reject(new Error('Data is empty'))
+            } else if (!this.constructor.serializable(data)) {
+                reject(new Error('Data is not serializable'))
+            } else {
+                const request = this.#storage.add(data)
+                request.onerror = event => {
+                    reject(event.target.error ? event.target.error : new Error('Error to add'))
+                }
+                request.onsuccess = event => {
+                    resolve(event.target.result ? event.target.result : null)
+                }
+            }
+        })
     }
 }

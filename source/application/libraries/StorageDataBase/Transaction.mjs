@@ -120,7 +120,7 @@ export class Transaction {
      * @param {Model|null} prototype
      * @returns {Query|null}
      */
-    #query(storage = '', prototype = null) {
+    query(storage = '', prototype = null) {
         const names = this.names
         if (!storage) {
             if (names.length === 1) {
@@ -149,23 +149,6 @@ export class Transaction {
             }
         }
         throw new Error(`${storage} not found`)
-    }
-
-    /**
-     * @param {string} storage
-     * @param {Model|null} prototype
-     * @returns {Query}
-     */
-    query(storage, prototype = null) {
-        return this.#query(storage, prototype)
-    }
-
-    select(storage) {
-        return this.#query(storage).select()
-    }
-
-    insert(storage) {
-        return this.#query(storage).insert()
     }
 
     /**

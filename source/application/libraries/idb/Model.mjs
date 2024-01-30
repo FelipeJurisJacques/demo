@@ -1,5 +1,5 @@
 import { Select } from "./Select.mjs"
-import { Connection } from "./Connection.mjs"
+import { IndexedDataBase } from "./IndexedDataBase.mjs"
 
 export class Model {
 
@@ -8,11 +8,11 @@ export class Model {
     }
 
     /**
-     * @returns {Promise<Select>}
+     * @returns {Select}
      */
-    static async select() {
-        const connection = Connection.from(this.database)
-        const transaction = await connection.transaction(this.table, false)
+    static select() {
+        const connection = new IndexedDataBase(this.database)
+        const transaction = connection.transaction(this.table, false)
         const statement = transaction.query(this.table, this.prototype)
         return statement.select()
     }
@@ -43,12 +43,9 @@ export class Model {
      */
     async save() {
         const data = this.serialize()
-        const connection = Connection.from(this.constructor.database)
-        if (!connection.opened) {
-            connection.open()
-        }
-        const transaction = connection.transaction(this.constructor.table, false)
-        const statement = transaction.query(this.table)
+        const connection = new IndexedDataBase(this.database)
+        const transaction = connection.transaction(this.table, true)
+        const statement = transaction.query(this.table, this.prototype)
         const key = statement.key
         if (!key) {
             await statement.insert(data)
@@ -60,7 +57,7 @@ export class Model {
                 return true
             }
         } else {
-
+            return await statement.update(data)
         }
         return false
     }

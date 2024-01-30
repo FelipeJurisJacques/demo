@@ -1,4 +1,4 @@
-import { Model } from "../libraries/StorageDataBase/Model.mjs";
+import { Model } from "../libraries/idb/Model.mjs";
 
 export class File extends Model {
     static get table() {

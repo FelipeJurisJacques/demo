@@ -4,6 +4,11 @@ import { Transaction } from "./Transaction.mjs"
 export class Connection {
 
     /**
+     * @var {DataBaseConnection[]}
+     */
+    static #connections = []
+
+    /**
      * @var {string}
      */
     #name
@@ -187,37 +192,12 @@ export class Connection {
     }
 
     /**
-     * @var {DataBaseConnection[]}
-     */
-    static #connections = []
-
-    /**
-     * @param {string} name
-     * @returns {DataBaseConnection}
-     */
-    static from(name) {
-        if (this.#connections) {
-            for (let connection of this.#connections) {
-                if (connection.name === name) {
-                    return connection
-                }
-            }
-        }
-        const connection = new Connection(name)
-        this.#connections.push(connection)
-        return connection
-    }
-
-    /**
      * @param {string|string[]} names
      * @param {boolean} write
-     * @returns {Promise<Transaction>}
+     * @returns {Transaction}
      */
-    async transaction(names, write = true) {
+    transaction(names, write = true) {
         const origins = this.#origins()
-        if (!this.opened) {
-            await this.open()
-        }
         const list = typeof names === 'string' ? [names] : names
         let n = []
         for (let name of list) {
@@ -259,24 +239,11 @@ export class Connection {
                 }
             }
         }
-        const statement = new Transaction(this.#database.transaction(
-            n,
-            write ? 'readwrite' : 'readonly'
-        ), origins[0])
+        // const statement = new Transaction(this.#database.transaction(
+        //     n,
+        //     write ? 'readwrite' : 'readonly'
+        // ), origins[0])
         this.#transactions.push(statement)
-        return statement
-    }
-
-    /**
-     * @param {String[]} columns 
-     * @returns {Promise<Query>}
-     */
-    async select(columns = []) {
-        if (!this.opened) {
-            await this.open()
-        }
-        const statement = new Query(this.#database)
-        statement.select(columns)
         return statement
     }
 
