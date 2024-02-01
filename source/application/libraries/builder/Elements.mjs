@@ -1,4 +1,4 @@
-import { Builder } from "../utils/Builder.mjs"
+import { Builder } from "./Builder.mjs"
 
 export function Div(widget = {}) {
     widget.tag = 'div'

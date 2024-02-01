@@ -1,7 +1,7 @@
 import { Bar } from "./widget/Bar.mjs"
 import { Media } from "./widget/Media.mjs"
 import { WebGl } from "./libraries/glsl/WebGl.mjs"
-import { Builder } from "./utils/Builder.mjs"
+import { Builder } from "./libraries/builder/Builder.mjs"
 import { Wavefront } from "./libraries/glsl/Wavefront.mjs"
 import { ServiceWorker } from "./libraries/sw/ServiceWorker.mjs"
 

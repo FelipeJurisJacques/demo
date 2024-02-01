@@ -1,4 +1,4 @@
-import { Button, Footer } from "./Elements.mjs"
+import { Button, Footer } from "../libraries/builder/Elements.mjs"
 import { Views } from "../routes/Views.mjs"
 
 export function Bar() {

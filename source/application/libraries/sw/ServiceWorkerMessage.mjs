@@ -1,4 +1,4 @@
-import { Subject } from "../../utils/Subject.mjs"
+import { Subject } from "../observer/Subject.mjs"
 import { ServiceWorker } from "./ServiceWorker.mjs"
 
 export class ServiceWorkerMessage extends Subject {
@@ -6,29 +6,31 @@ export class ServiceWorkerMessage extends Subject {
     /**
      * @var {number}
      */
-    static #uuid = 1
+    static #id
 
     /**
      * @var {object}
      */
-    static #asynchronous = {}
+    static #asynchronous
 
     constructor() {
         super()
-        if ('serviceWorker' in navigator) {
+        if (!this.constructor.#id && !this.constructor.#asynchronous && 'serviceWorker' in navigator) {
+            this.constructor.#id = 1
+            this.constructor.#asynchronous = {}
             navigator.serviceWorker.addEventListener('message', event => {
                 if (event.data) {
-                    const uuid = event.data.uuid
-                    if (uuid && this.constructor.#asynchronous[uuid]) {
+                    const id = event.data.id
+                    if (id && this.constructor.#asynchronous[id]) {
                         try {
-                            this.constructor.#asynchronous[uuid](event)
+                            this.constructor.#asynchronous[id](event)
                         } catch (error) {
                             console.error(error)
                         }
-                        delete this.constructor.#asynchronous[uuid]
+                        delete this.constructor.#asynchronous[id]
                     }
                 }
-                this.notify(event)
+                this.notify(event.data)
             })
         }
     }
@@ -36,17 +38,18 @@ export class ServiceWorkerMessage extends Subject {
     /**
      * @param {*} message
      * @param {string} manager
-     * @returns {Promise<number>}
+     * @returns {number}
      */
-    async post(message, manager = '') {
-        const uuid = this.constructor.#uuid++
-        const worker = await ServiceWorker.getWorker()
-        worker.postMessage({
-            uuid: uuid,
-            manager: manager,
-            payload: message,
+    post(message, manager = '') {
+        const id = this.constructor.#id++
+        ServiceWorker.getWorker().then(worker => {
+            worker.postMessage({
+                id: id,
+                manager: manager,
+                data: message,
+            })
         })
-        return uuid
+        return id
     }
 
     /**
@@ -58,18 +61,18 @@ export class ServiceWorkerMessage extends Subject {
     request(message, manager = '', timeout = 1000) {
         return new Promise((resolve, reject) => {
             ServiceWorker.getWorker().then(worker => {
-                const uuid = this.constructor.#uuid++
-                this.constructor.#asynchronous[uuid] = event => {
+                const id = this.constructor.#id++
+                this.constructor.#asynchronous[id] = event => {
                     resolve(event.data)
                 }
                 worker.postMessage({
-                    uuid: uuid,
+                    id: id,
+                    data: message,
                     manager: manager,
-                    payload: message,
                 })
                 setTimeout(() => {
-                    if (this.constructor.#asynchronous[uuid]) {
-                        delete this.constructor.#asynchronous[uuid]
+                    if (this.constructor.#asynchronous[id]) {
+                        delete this.constructor.#asynchronous[id]
                         reject(new Error('timeout'))
                     }
                 }, timeout)

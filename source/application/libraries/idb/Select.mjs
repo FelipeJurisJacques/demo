@@ -1,11 +1,17 @@
+import { Observer } from "../observer/Observer.mjs"
 import { ServiceWorker } from "../sw/ServiceWorker.mjs"
 
-export class Select {
+export class Select extends Observer {
+    #id
     #mode
     #trace
     #table
+    #queue
     #tables
+    #storage
+    #request
     #database
+    #asynchronous
 
     /**
      * @var {number}
@@ -38,11 +44,6 @@ export class Select {
     #error
 
     /**
-     * @var {Array}
-     */
-    #queue
-
-    /**
      * @var {string}
      */
     #column
@@ -58,27 +59,39 @@ export class Select {
     #select
 
     /**
-     * @var {IDBObjectStore}
-     */
-    #storage
-
-    /**
-     * @var {IDBRequest}
-     */
-    #request
-
-    /**
      * @var {Model}
      */
     #prototype
 
     constructor(stream) {
+        super()
         this.#mode = stream.mode
+        this.#queue = []
         this.#trace = stream.trace
         this.#table = stream.table
         this.#tables = stream.tables
         this.#database = stream.database
         this.#prototype = stream.prototype
+        this.#asynchronous = []
+        ServiceWorker.message.subscribe(this)
+    }
+
+    notify(message) {
+        if (
+            message.data
+            && message.id === this.#id
+            && message.manager === 'database'
+        ) {
+            if (typeof message.data === 'object' && message.data instanceof Error) {
+                throw message.data
+            }
+            this.#queue.push(message.data)
+            if (this.#asynchronous.length > 0) {
+                const event = this.#asynchronous.shift()
+                event(message.data)
+            }
+        }
+        console.log(message)
     }
 
     /**
@@ -124,44 +137,32 @@ export class Select {
     }
 
     fetch() {
-        return new Promise(async (resolve, reject) => {
-            const response = await ServiceWorker.message.request({
-                mode: this.#mode,
-                trace: this.#trace,
-                table: this.#table,
-                tables: this.#tables,
-                database: this.#database,
-                prototype: this.#prototype,
-            })
-            if (response.payload && response.payload.error) {
-                reject(response.payload.error)
+        return new Promise((resolve, reject) => {
+            if (this.#queue.length > 0) {
+                resolve(this.#queue.shift())
             } else {
-                console.log(response)
-            }
-        })
-        return new Promise(async resolve => {
-            if (!this.#request) {
-                this.#cursor()
-            }
-            while (true) {
-                let value = await this.#fetch()
-                if (value) {
-                    if (!this.#having || this.#having(value)) {
-                        if (this.#prototype) {
-                            const model = new this.#prototype.constructor()
-                            for (let key in value) {
-                                model[key] = value[key]
-                            }
-                            resolve(model)
-                        } else {
-                            resolve(value)
-                        }
-                        break
+                this.#asynchronous.push(value => {
+                    if (!value || !value instanceof Error) {
+                        resolve(value)
+                    } else {
+                        reject(value)
                     }
-                } else {
-                    resolve(null)
-                    break
-                }
+                })
+            }
+            if (!this.#id) {
+                this.#id = this.#post({
+                    execute: {
+                        mode: this.#mode,
+                        trace: this.#trace,
+                        table: this.#table,
+                        index: null,
+                        range: null,
+                        tables: this.#tables,
+                        cursor: true,
+                        database: this.#database,
+                        direction: null,
+                    }
+                })
             }
         })
     }
@@ -253,5 +254,9 @@ export class Select {
                 this.#event = event
             }
         }
+    }
+
+    #post(data) {
+        return ServiceWorker.message.request(data, 'database')
     }
 }

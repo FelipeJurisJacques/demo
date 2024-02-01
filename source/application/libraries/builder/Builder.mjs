@@ -1,5 +1,5 @@
-import { File } from "./File.mjs"
-import { Observer } from "./Observer.mjs"
+import { File } from "../../utils/File.mjs"
+import { Observer } from "../observer/Observer.mjs"
 
 export class Builder {
     static #events = []

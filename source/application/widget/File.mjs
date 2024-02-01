@@ -1,4 +1,4 @@
-import { Builder } from "../utils/Builder.mjs";
+import { Builder } from "../libraries/builder/Builder.mjs";
 
 /**
  * @param {File} stream 

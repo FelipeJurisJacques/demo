@@ -1,5 +1,5 @@
 import { File } from "../utils/File.mjs";
-import { Input } from "../widget/Elements.mjs";
+import { Input } from "../libraries/builder/Elements.mjs";
 import { Window } from "../widget/Window.mjs";
 import { File as FileElement } from "../widget/File.mjs";
 

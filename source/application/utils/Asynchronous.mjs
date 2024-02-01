@@ -1,4 +1,4 @@
-import { Observer } from "./Observer.mjs"
+import { Observer } from "../libraries/observer/Observer.mjs"
 
 export class Asynchronous extends Observer {
     #payload

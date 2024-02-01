@@ -1,4 +1,4 @@
-import { Div, P } from "./Elements.mjs";
+import { Div, P } from "../libraries/builder/Elements.mjs";
 
 export function Contact(name) {
     return Div({
