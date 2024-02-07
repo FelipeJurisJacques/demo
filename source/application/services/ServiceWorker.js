@@ -1,6 +1,9 @@
 importScripts(
-    new URL(`${location.origin}/source/application/worker/IndexedDataBase.js`)
+    new URL(`${location.origin}/source/application/worker/IndexedDataBase.js`),
+    new URL(`${location.origin}/source/application/worker/libraries/message/MessageWorker.js`)
 )
+
+const message = new MessageWorker()
 
 // install: é disparado quando o service worker é instalado pela primeira vez ou quando o arquivo do service worker é alterado. Esse evento é usado para armazenar em cache os recursos estáticos da aplicação, como HTML, CSS, JavaScript e imagens.
 // activate: é disparado quando o service worker é ativado, ou seja, quando ele passa a controlar as páginas da aplicação. Esse evento é usado para limpar os caches antigos ou fazer outras tarefas de inicialização.
@@ -50,32 +53,6 @@ self.addEventListener('activate', event => {
     // broadcast.close()
 })
 
-self.addEventListener('message', async event => {
-    // ExtendableMessageEvent
-    console.log(event)
-    const id = event.data.id ? event.data.id : 0
-    const manager = event.data.manager ? event.data.manager : 'global'
-    const data = event.data.data ? event.data.data : {}
-    const client = await clients.get(event.source.id)
-    if (client) {
-        const response = {
-            id: id,
-            manager: manager,
-            data: null,
-        }
-        try {
-            switch (manager) {
-                case 'database':
-                    response.data = await IndexedDataBaseController.handler(client, event)
-                    break
-                default:
-                    break
-            }
-        } catch (error) {
-            response.data = {
-                error: error,
-            }
-        }
-        client.postMessage(response)
-    }
+message.subscribe(stream => {
+    console.log(stream)
 })

@@ -12,8 +12,11 @@ export class Model {
      */
     static select() {
         const connection = new IndexedDataBase(this.database)
+        console.log(connection)
         const transaction = connection.transaction(this.table, false)
+        console.log(transaction)
         const statement = transaction.query(this.table, this.prototype)
+        console.log(statement)
         return statement.select()
     }
 

@@ -1,3 +1,4 @@
+import { IndexedDataBaseSharedWorker } from "../../worker/IndexedDataBaseSharedWorker.mjs"
 import { Observer } from "../observer/Observer.mjs"
 import { ServiceWorker } from "../sw/ServiceWorker.mjs"
 
