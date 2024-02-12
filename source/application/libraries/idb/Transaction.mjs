@@ -1,45 +1,139 @@
 import { Query } from "./Query.mjs"
+import { Subject } from "../observer/Subject.mjs"
 
-export class Transaction {
+export class Transaction extends Subject {
 
-    #mode
-    #trace
+    /**
+     * @var {Error}
+     */
+    #error
+
+    /**
+     * @var {function[]}
+     */
+    #queue
+
+    /**
+     * @var {object}
+     */
+    #origin
+
+    /**
+     * @var {string[]}
+     */
     #tables
-    #worker
-    #connection
-    #subscription
+
+    /**
+     * @var {IDBObjectStore[]}
+     */
+    #storages
+
+    /**
+     * @var {IDBTransaction}
+     */
+    #transaction
 
     constructor(stream) {
-        this.#mode = stream.mode
-        this.#trace = stream.trace
+        super()
+        this.#origin = stream.origin
+        this.#queue = []
         this.#tables = stream.tables
-        this.#worker = stream.worker
-        this.#connection = stream.connection
-        this.#worker.subscribe(message => {
-            if (message.manager === 'transaction') {
-                console.log(message)
+        this.#storages = []
+        this.subscribe(event => {
+            switch (event.type) {
+                case 'abort':
+                case 'error':
+                    this.#error = event.target.error
+                    break
+                case 'complete':
+                    this.#transaction = null
+                    break
+                default:
+                    break
             }
         })
-        this.#worker.post({
-            transaction: {
-                mode: this.#mode,
-                trace: this.#trace,
-                tables: this.#tables,
-            },
-        }, 'transaction').then(id => {
-            this.#subscription = id
+        const promise = stream.transaction
+        promise.then(transaction => {
+            this.#transaction = transaction
+            this.#transaction.onabort = event => {
+                this.notify(event)
+            }
+            this.#transaction.onerror = event => {
+                this.notify(event)
+            }
+            this.#transaction.oncomplete = event => {
+                this.notify(event)
+            }
+            for (let promise of this.#queue) {
+                promise(transaction)
+            }
+        })
+        promise.catch(error => {
+            this.#error = error
+            for (let promise of this.#queue) {
+                promise(error)
+            }
         })
     }
 
-    query(table, prototype) {
-        return
+    get origin() {
+        return this.#origin
+    }
+
+    get tables() {
+        return this.#tables
+    }
+
+    /**
+     * @param {string} table
+     * @param {null|object} prototype
+     * @returns {Query}
+     */
+    query(table, prototype = null) {
         return new Query({
-            mode: this.#mode,
-            trace: this.#trace,
             table: table,
-            tables: this.#tables,
-            connection: this.#connection,
+            storage: new Promise((resolve, reject) => {
+                if (this.#error) {
+                    reject(this.#error)
+                    return
+                }
+                for (let statement of this.#storages) {
+                    if (statement instanceof IDBObjectStore) {
+                        if (table === statement.name) {
+                            resolve(statement)
+                            return
+                        }
+                    }
+                }
+                if (this.#transaction) {
+                    const storage = this.#transaction.objectStore(table)
+                    this.#storages.push(storage)
+                    resolve(storage)
+                    return
+                }
+                this.#queue.push(data => {
+                    if (data instanceof IDBTransaction) {
+                        resolve(data.objectStore(table))
+                    } else if (data instanceof Error) {
+                        reject(data)
+                    } else {
+                        reject(new Error('transaction is failed'))
+                    }
+                })
+            }),
             prototype: prototype,
         })
+    }
+
+    commit() {
+        if (this.#transaction) {
+            this.#transaction.commit()
+        }
+    }
+
+    abort() {
+        if (this.#transaction) {
+            this.#transaction.abort()
+        }
     }
 }

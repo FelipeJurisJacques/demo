@@ -1,18 +1,8 @@
-import { IndexedDataBaseSharedWorker } from "../../worker/IndexedDataBaseSharedWorker.mjs"
-import { Observer } from "../observer/Observer.mjs"
-import { ServiceWorker } from "../sw/ServiceWorker.mjs"
+export class Select {
 
-export class Select extends Observer {
-    #id
-    #mode
-    #trace
-    #table
     #queue
-    #tables
     #storage
     #request
-    #database
-    #asynchronous
 
     /**
      * @var {number}
@@ -60,39 +50,34 @@ export class Select extends Observer {
     #select
 
     /**
+     * @var {function}
+     */
+    #execution
+
+    /**
      * @var {Model}
      */
     #prototype
 
     constructor(stream) {
-        super()
-        this.#mode = stream.mode
         this.#queue = []
-        this.#trace = stream.trace
-        this.#table = stream.table
-        this.#tables = stream.tables
-        this.#database = stream.database
         this.#prototype = stream.prototype
-        this.#asynchronous = []
-        ServiceWorker.message.subscribe(this)
-    }
-
-    notify(message) {
-        if (
-            message.data
-            && message.id === this.#id
-            && message.manager === 'database'
-        ) {
-            if (typeof message.data === 'object' && message.data instanceof Error) {
-                throw message.data
+        const promise = stream.storage
+        promise.then(storage => {
+            this.#storage = storage
+            for (let promise of this.#queue) {
+                promise(storage)
             }
-            this.#queue.push(message.data)
-            if (this.#asynchronous.length > 0) {
-                const event = this.#asynchronous.shift()
-                event(message.data)
+            if (this.#execution) {
+                this.#execution()
             }
-        }
-        console.log(message)
+        })
+        promise.catch(error => {
+            this.#error = error
+            for (let promise of this.#queue) {
+                promise(error)
+            }
+        })
     }
 
     /**
@@ -139,62 +124,41 @@ export class Select extends Observer {
 
     fetch() {
         return new Promise((resolve, reject) => {
-            if (this.#queue.length > 0) {
-                resolve(this.#queue.shift())
-            } else {
-                this.#asynchronous.push(value => {
-                    if (!value || !value instanceof Error) {
-                        resolve(value)
-                    } else {
-                        reject(value)
-                    }
-                })
-            }
-            if (!this.#id) {
-                this.#id = this.#post({
-                    execute: {
-                        mode: this.#mode,
-                        trace: this.#trace,
-                        table: this.#table,
-                        index: null,
-                        range: null,
-                        tables: this.#tables,
-                        cursor: true,
-                        database: this.#database,
-                        direction: null,
-                    }
-                })
-            }
-        })
-    }
-
-    #fetch() {
-        return new Promise((resolve, reject) => {
             if (this.#error) {
-            } else if (this.#event) {
-                const cursor = this.#event.target.result
-                this.#event = null
-                if (cursor) {
-                    if (cursor.value) {
-                        this.#count++
-                        if (!this.#limit || this.#limit > this.#count) {
-                            cursor.continue()
+                reject(this.#error)
+            } else {
+                if (!this.#request) {
+                    if (this.#storage) {
+                        this.#cursor()
+                    } else if (!this.#execution) {
+                        this.#execution = this.#cursor
+                    }
+                }
+                if (this.#event) {
+                    const cursor = this.#event.target.result
+                    this.#event = null
+                    if (cursor) {
+                        if (cursor.value) {
+                            this.#count++
+                            if (!this.#limit || this.#limit > this.#count) {
+                                cursor.continue()
+                            }
+                            resolve(cursor.value)
+                        } else {
+                            resolve(null)
                         }
-                        resolve(cursor.value)
                     } else {
                         resolve(null)
                     }
                 } else {
-                    resolve(null)
+                    this.#queue.push(value => {
+                        if (value && value instanceof Error) {
+                            reject(value)
+                        } else {
+                            resolve(value)
+                        }
+                    })
                 }
-            } else {
-                this.#queue.push(value => {
-                    if (value && value instanceof Error) {
-                        reject(value)
-                    } else {
-                        resolve(value)
-                    }
-                })
             }
         })
     }
@@ -255,9 +219,5 @@ export class Select extends Observer {
                 this.#event = event
             }
         }
-    }
-
-    #post(data) {
-        return ServiceWorker.message.request(data, 'database')
     }
 }

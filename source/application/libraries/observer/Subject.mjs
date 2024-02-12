@@ -3,16 +3,15 @@ import { Observer } from "./Observer.mjs"
 export class Subject {
     #handlers
 
-    constructor() { }
+    constructor() {
+        this.#handlers = []
+    }
 
     /**
      * @param {Observer} observer 
      * @returns {void}
      */
     subscribe(observer) {
-        if (!this.#handlers) {
-            this.#handlers = []
-        }
         this.#handlers.push(observer)
     }
 
@@ -21,11 +20,9 @@ export class Subject {
      * @returns {void}
      */
     unsubscribe(observer) {
-        if (this.#handlers) {
-            for (let i in this.#handlers) {
-                if (this.#handlers[i] === observer) {
-                    this.#handlers.splice(i, 1)
-                }
+        for (let i in this.#handlers) {
+            if (this.#handlers[i] === observer) {
+                this.#handlers.splice(i, 1)
             }
         }
     }
@@ -35,13 +32,11 @@ export class Subject {
      * @returns {void}
      */
     notify(data = null) {
-        if (this.#handlers) {
-            for (let handler of this.#handlers) {
-                if (typeof handler === 'object' && handler instanceof Observer) {
-                    handler.notify(data, this)
-                } else if (typeof handler === 'function') {
-                    handler(data, this)
-                }
+        for (let handler of this.#handlers) {
+            if (typeof handler === 'object' && handler instanceof Observer) {
+                handler.notify(data, this)
+            } else if (typeof handler === 'function') {
+                handler(data, this)
             }
         }
     }

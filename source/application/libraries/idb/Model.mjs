@@ -12,11 +12,8 @@ export class Model {
      */
     static select() {
         const connection = new IndexedDataBase(this.database)
-        console.log(connection)
         const transaction = connection.transaction(this.table, false)
-        console.log(transaction)
         const statement = transaction.query(this.table, this.prototype)
-        console.log(statement)
         return statement.select()
     }
 
@@ -33,7 +30,7 @@ export class Model {
     /**
      * @returns {object}
      */
-    serialize() {
+    toJSON() {
         const data = {}
         for (let key in this) {
             data[key] = this[key]
@@ -45,11 +42,11 @@ export class Model {
      * @returns {Promise<boolean>}
      */
     async save() {
-        const data = this.serialize()
-        const connection = new IndexedDataBase(this.database)
-        const transaction = connection.transaction(this.table, true)
-        const statement = transaction.query(this.table, this.prototype)
-        const key = statement.key
+        const data = this.toJSON()
+        const connection = new IndexedDataBase(this.constructor.database)
+        const transaction = connection.transaction(this.constructor.table, true)
+        const statement = transaction.query(this.constructor.table, this.constructor.prototype)
+        const key = await statement.key
         if (!key) {
             await statement.insert(data)
             return true

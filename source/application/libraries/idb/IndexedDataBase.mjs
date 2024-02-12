@@ -1,63 +1,35 @@
+import { Connection } from "./Connection.mjs"
 import { Transaction } from "./Transaction.mjs"
-import { IndexedDataBaseSharedWorker } from "../../worker/IndexedDataBaseSharedWorker.mjs"
 
 export class IndexedDataBase {
 
-    #id
-    #name
-    #opened
-    #worker
-    #subscription
-
-    constructor(database) {
-        this.#name = database
-        this.#opened = false
-        this.#worker = new IndexedDataBaseSharedWorker(this.#name)
-        this.#worker.subscribe(message => {
-            if (message.manager === 'connection') {
-                this.#id = message.id
-                this.#opened = message.opened
-            }
-        })
-    }
+    /**
+     * @var {Connection[]}
+     */
+    static #connections = []
 
     /**
-     * @returns {number}
+     * @var {Connection}
      */
-    get id() {
-        return this.#id
+    #connection
+
+    constructor(database) {
+        for (let connection of this.constructor.#connections) {
+            if (database === connection.name) {
+                this.#connection = connection
+            }
+        }
+        if (!this.#connection) {
+            this.#connection = new Connection(database)
+            this.constructor.#connections.push(this.#connection)
+        }
     }
 
     /**
      * @returns {boolean}
      */
     get opened() {
-        return this.#opened
-    }
-
-    /**
-     * @param {number} version
-     * @param {function} upgrade
-     * @returns {Promise<void>}
-     */
-    async open(version, upgrade) {
-        if (!this.#id || !this.#opened) {
-            this.#subscription = await this.#worker.post({
-                open: {
-                    upgrade: upgrade ? upgrade : null,
-                    version: version ? version : null,
-                    database: this.#name,
-                },
-            }, 'connection')
-        }
-    }
-
-    close() {
-        if (this.#id) {
-            this.#worker.post({
-                close: this.#id,
-            })
-        }
+        return this.#connection.opened
     }
 
     /**
@@ -67,15 +39,13 @@ export class IndexedDataBase {
      * @returns {Transaction}
      */
     transaction(tables, write = false) {
-        if (!this.#opened) {
-            this.open()
+        if (!this.#connection.opened) {
+            this.#connection.open()
         }
-        return new Transaction({
+        return this.#connection.transaction({
             mode: write ? 'readwrite' : 'readonly',
             trace: this.#trace(),
             tables: typeof tables === 'string' ? [tables] : tables,
-            worker: this.#worker,
-            connection: this,
         })
     }
 
