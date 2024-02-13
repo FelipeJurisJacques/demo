@@ -33,7 +33,6 @@ export class IndexedDataBase {
     }
 
     /**
-     * 
      * @param {string|string[]} tables
      * @param {boolean} write
      * @returns {Transaction}
