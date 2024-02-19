@@ -1,6 +1,6 @@
-footer.bar {
+/* footer.bar {
     width: 100%;
-    height: 100px;
+    height: 30px;
     bottom: 0px;
     display: flex;
     position: absolute;
@@ -26,7 +26,30 @@ footer.bar {
     justify-content: center;
     background-repeat: no-repeat;
     background-position: center center;
-    /* background-attachment: fixed; */
+    background-attachment: fixed;
+} */
+
+footer.bar {
+    width: 100%;
+    height: 30px;
+    bottom: 0px;
+    display: flex;
+    position: absolute;
+    background-image: url(/source/image/background/taskbar.png);
+}
+
+footer.bar button.start {
+    width: 102px;
+    height: 30px;
+    background-image: url(/source/image/icon/start_button.png);
+}
+
+footer.bar button.start:hover {
+    background-image: url(/source/image/icon/start_button_hover.png);
+}
+
+footer.bar button.start:active {
+    background-image: url(/source/image/icon/start_button_active.png);
 }
 
 footer.bar button {

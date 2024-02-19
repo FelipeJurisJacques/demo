@@ -1,11 +1,36 @@
-import { Subject } from "../observer/Subject.mjs"
-
-export class Widget extends Subject {
+export class Widget {
+    static #handlers = []
+    static #subscriptions = []
 
     #element
+    #subjects
+
+    //focus
+    //focusin
+    // #subjectTap
+    // #subjectBlur
+    // #subjectDrop
+    // #subjectClick
+    // #subjectActive
+    // #subjectLongTap
+    // #subjectDragOver
+    // #subjectLongClick
+    // #subjectDoubleTap
+    // #subjectPointerUp
+    // #subjectLongAction
+    // #subjectPointerOut
+    // #subjectDoubleClick
+    // #subjectPointerOver
+    // #subjectPointerDown
+    // #subjectPointerMove
+    // #subjectDoubleAction
+    // #subjectPointerEnter
+    // #subjectPointerLeave
+    // #subjectPointerCancel
+    // #subjectGotPointerCapture
+    // #subjectLostPointerCapture
 
     constructor(context) {
-        super()
         this.#element = context.tag
         if (this.#element) {
             for (let name in context) {
@@ -37,17 +62,18 @@ export class Widget extends Subject {
                     case 'content':
                         this.#element.innerText = context.content
                         break
-                    // case 'child':
-                    //     if (typeof widget.child === 'object') {
-                    //         this.#append(element, widget.child)
-                    //     } else {
-                    //         element.innerHTML = widget.child
-                    //     }
-                    //     break
-                    case 'children':
-                        for (let child of this.#element.children) {
-                            child.remove()
+                    case 'child':
+                        if (context.child instanceof Widget) {
+                            this.#element.appendChild(context.child.#element)
+                        } else if (context.child instanceof URL) {
+                            fetch(context.child).then(async response => {
+                                this.#element.innerHTML = await response.text()
+                            })
+                        } else {
+                            this.#element.appendChild(context.child)
                         }
+                        break
+                    case 'children':
                         for (let child of context.children) {
                             if (child instanceof Widget) {
                                 this.#element.appendChild(child.#element)
@@ -71,94 +97,96 @@ export class Widget extends Subject {
                             this.#element.style[style] = context.style[style] = value
                         }
                         break
-                    // case 'onAction':
-                    //     this.#subscribe('click')
-                    //     element.subjectAction = widget[name]
-                    //     break
+                    case 'onActive':
+                        this.onActive = context[name]
+                        break
+                    case 'onBlur':
+                        this.onBlur = context[name]
+                        break
                     // case 'onLongAction':
                     //     this.#subscribe('pointerup')
                     //     this.#subscribe('pointerdown')
-                    //     element.subjectLongAction = widget[name]
+                    //     this.#subjectLongAction = widget[name]
                     //     break
                     // case 'onDoubleAction':
                     //     this.#subscribe('click')
-                    //     element.subjectDoubleAction = widget[name]
+                    //     this.#subjectDoubleAction = widget[name]
                     //     break
                     // case 'onTap':
                     //     this.#subscribe('click')
-                    //     element.subjectTap = widget[name]
+                    //     this.#subjectTap = widget[name]
                     //     break
                     // case 'onLongTap':
                     //     this.#subscribe('pointerup')
                     //     this.#subscribe('pointerdown')
-                    //     element.subjectLongTap = widget[name]
+                    //     this.#subjectLongTap = widget[name]
                     //     break
                     // case 'onDoubleTap':
                     //     this.#subscribe('click')
-                    //     element.subjectDoubleClick = widget[name]
+                    //     this.#subjectDoubleClick = widget[name]
                     //     break
                     // case 'onClick':
                     //     this.#subscribe('click')
-                    //     element.subjectClick = widget[name]
+                    //     this.#subjectClick = widget[name]
                     //     break
                     // case 'onLongClick':
                     //     this.#subscribe('pointerup')
                     //     this.#subscribe('pointerdown')
-                    //     element.subjectLongClick = widget[name]
+                    //     this.#subjectLongClick = widget[name]
                     //     break
                     // case 'onDoubleClick':
                     //     this.#subscribe('click')
-                    //     element.subjectDoubleClick = widget[name]
+                    //     this.#subjectDoubleClick = widget[name]
                     //     break
                     // case 'onPointerUp':
                     //     this.#subscribe('pointerup')
-                    //     element.subjectPointerUp = widget[name]
+                    //     this.#subjectPointerUp = widget[name]
                     //     break
                     // case 'onPointerOut':
                     //     this.#subscribe('pointerout')
-                    //     element.subjectPointerOut = widget[name]
+                    //     this.#subjectPointerOut = widget[name]
                     //     break
                     // case 'onPointerOver':
                     //     this.#subscribe('pointerover')
-                    //     element.subjectPointerOver = widget[name]
+                    //     this.#subjectPointerOver = widget[name]
                     //     break
                     // case 'onPointerDown':
                     //     this.#subscribe('pointerdown')
-                    //     element.subjectPointerDown = widget[name]
+                    //     this.#subjectPointerDown = widget[name]
                     //     break
                     // case 'onPointerMove':
                     //     this.#subscribe('pointermove')
-                    //     element.subjectPointerMove = widget[name]
+                    //     this.#subjectPointerMove = widget[name]
                     //     break
                     // case 'onPointerEnter':
                     //     this.#subscribe('pointerenter')
-                    //     element.subjectPointerEnter = widget[name]
+                    //     this.#subjectPointerEnter = widget[name]
                     //     break
                     // case 'onPointerLeave':
                     //     this.#subscribe('pointerleave')
-                    //     element.subjectPointerLeave = widget[name]
+                    //     this.#subjectPointerLeave = widget[name]
                     //     break
                     // case 'onPointerCancel':
                     //     this.#subscribe('pointercancel')
-                    //     element.subjectPointerCancel = widget[name]
+                    //     this.#subjectPointerCancel = widget[name]
                     //     break
                     // case 'gotpointercapture':
                     //     this.#subscribe('gotpointercapture')
-                    //     element.subjectgotpointercapture = widget[name]
+                    //     this.#subjectgotpointercapture = widget[name]
                     //     break
                     // case 'lostpointercapture':
                     //     this.#subscribe('lostpointercapture')
-                    //     element.subjectlostpointercapture = widget[name]
+                    //     this.#subjectlostpointercapture = widget[name]
                     //     break
 
                     // ARRASTAR
                     // case 'onDragOver':
                     //     this.#subscribe('dragover')
-                    //     element.subjectDragOver = widget[name]
+                    //     this.#subjectDragOver = widget[name]
                     //     break
                     // case 'onDrop':
                     //     this.#subscribe('drop')
-                    //     element.subjectDrop = widget[name]
+                    //     this.#subjectDrop = widget[name]
                     //     break
                     // case 'onDropFile':
                     //     this.#subscribe('drop')
@@ -174,7 +202,227 @@ export class Widget extends Subject {
         }
     }
 
+    /**
+     * @var {boolean} value
+     */
+    set toggle(value) {
+        return this.#element.style.display = value ? 'block' : 'none'
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    get toggle() {
+        if (this.#element.style.display) {
+            return this.#element.style.display !== 'none'
+        } else {
+            window.getComputedStyle(this.#element).display !== 'none'
+        }
+    }
+
+    /**
+     * @param {object} context
+     */
+    set child(context) {
+        for (let child of this.#element.children) {
+            child.remove()
+        }
+        if (context instanceof Widget) {
+            this.#element.appendChild(context.#element)
+        } else if (context instanceof URL) {
+            fetch(context).then(async response => {
+                this.#element.innerHTML = await response.text()
+            })
+        } else {
+            this.#element.appendChild(context)
+        }
+    }
+
+    /**
+     * @param {object[]} list
+     */
+    set children(list) {
+        for (let child of this.#element.children) {
+            child.remove()
+        }
+        for (let child of list) {
+            if (child instanceof Widget) {
+                this.#element.appendChild(child.#element)
+            } else {
+                this.#element.appendChild(child)
+            }
+        }
+    }
+
+    /**
+     * @param {function} event
+     */
+    set onActive(event) {
+        this.#subscribe('click')
+        this.#subjects.active = event
+    }
+
+    /**
+     * @param {function} event
+     */
+    set onBlur(event) {
+        if (!this.#subjects) {
+            this.#subjects = {}
+        }
+        if (!this.#subjects.blur) {
+            if (this.#element.getAttribute('tabindex') === null) {
+                this.#element.setAttribute('tabindex', 0)
+            }
+            this.#element.addEventListener('blur', event => {
+                this.#subjects.blur(event)
+            })
+        }
+        this.#subjects.blur = event
+    }
+
+    focus(options) {
+        this.#element.focus(options)
+    }
+
     toString() {
         return this.#element
+    }
+
+    #subscribe(name, event) {
+        if (!this.#subjects) {
+            this.#subjects = {}
+        }
+        if (event) {
+            this.#subjects[name] = event
+        }
+        if (Widget.#subscriptions.indexOf(name) < 0) {
+            window.addEventListener(name, event => {
+                Widget.#notify(event)
+            })
+            Widget.#subscriptions.push(name)
+        }
+        if (!Widget.#handlers.includes(this)) {
+            Widget.#handlers.push(this)
+        }
+    }
+
+    static #notify(event) {
+        let element = event.target
+        while (element) {
+            for (let statement of this.#handlers) {
+                if (
+                    statement.#subjects
+                    && element === statement.#element
+                ) {
+                    switch (event.type) {
+                        case 'click':
+                            if (statement.#subjects.active) {
+                                statement.#subjects.active(event)
+                                return true
+                            }
+                            switch (event.pointerType) {
+                                case 'mouse':
+                                    if (statement.#subjects.click) {
+                                        statement.#subjects.click(event)
+                                        return true
+                                    }
+                                    break
+                                // case 'touch':
+                                //     if (double && statement.#subjectDoubleTap) {
+                                //         statement.#subjectDoubleTap(event)
+                                //         return true
+                                //     }
+                                //     if (statement.#subjectTap) {
+                                //         statement.#subjectTap(event)
+                                //         return true
+                                //     }
+                                //     break
+                                default:
+                                    break
+                            }
+                            break
+                        // case 'pointerup':
+                        //     if (statement.#subjectPointerUp) {
+                        //         statement.#subjectPointerUp(event)
+                        //         return true
+                        //     }
+                        //     break
+                        // case 'pointerout':
+                        //     if (statement.#subjectPointerOut) {
+                        //         statement.#subjectPointerOut(event)
+                        //         return true
+                        //     }
+                        //     break
+                        // case 'pointerover':
+                        //     if (statement.#subjectPointerOver) {
+                        //         statement.#subjectPointerOver(event)
+                        //         return true
+                        //     }
+                        //     break
+                        // case 'pointerdown':
+                        //     if (statement.#subjectPointerDown) {
+                        //         statement.#subjectPointerDown(event)
+                        //         return true
+                        //     }
+                        //     break
+                        // case 'pointermove':
+                        //     if (statement.#subjectPointerMove) {
+                        //         statement.#subjectPointerMove(event)
+                        //         return true
+                        //     }
+                        //     break
+                        // case 'pointerenter':
+                        //     if (statement.#subjectPointerEnter) {
+                        //         statement.#subjectPointerEnter(event)
+                        //         return true
+                        //     }
+                        //     break
+                        // case 'pointerleave':
+                        //     if (statement.#subjectPointerLeave) {
+                        //         statement.#subjectPointerLeave(event)
+                        //         return true
+                        //     }
+                        //     break
+                        // case 'pointercancel':
+                        //     if (statement.#subjectPointerCancel) {
+                        //         statement.#subjectPointerCancel(event)
+                        //         return true
+                        //     }
+                        //     break
+
+                        // // ARRASTAR
+                        // case 'dragover':
+                        //     if (element.onDropFile) {
+                        //         event.preventDefault()
+                        //     }
+                        //     if (statement.#subjectDragOver) {
+                        //         statement.#subjectDragOver(event)
+                        //         return true
+                        //     }
+                        //     break
+                        // case 'drop':
+                        //     if (element.onDropFile) {
+                        //         event.preventDefault()
+                        //         event.files = File.files(event.dataTransfer)
+                        //         element.onDropFile(event)
+                        //         return true
+                        //     }
+                        //     if (statement.#subjectDrop) {
+                        //         statement.#subjectDrop(event)
+                        //         return true
+                        //     }
+                        //     break
+
+                        default:
+                            if (statement.#subjects[event.type]) {
+                                statement.#subjects[event.type](event)
+                                return true
+                            }
+                            break
+                    }
+                }
+            }
+            element = element.parentElement
+        }
     }
 }
