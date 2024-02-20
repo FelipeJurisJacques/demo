@@ -12,8 +12,10 @@ export class Main extends Html {
     constructor() {
         const menu = new Div({
             class: 'start_menu',
-            onBlur: function (event) {
-                this.toggle = false
+            onLeaving: function (event) {
+                setTimeout(() => {
+                    this.toggle = false
+                }, 50)
             },
             children: [
                 new Ul({
@@ -24,8 +26,8 @@ export class Main extends Html {
                                 title: 'Explorer',
                                 content: 'Explorador de arquivos',
                                 onActive: function (event) {
-                                    console.log(event)
-                                    Views.route('explorer')
+                                    menu.toggle = false
+                                    // Views.route('explorer')
                                 },
                             }),
                         }),
@@ -73,10 +75,8 @@ export class Main extends Html {
                                     class: 'start',
                                     title: 'Start',
                                     onActive: function (event) {
-                                        if (menu.toggle) {
-                                            menu.toggle = false
-                                        } else {
-                                            menu.toggle = focus
+                                        if (!menu.toggle) {
+                                            menu.toggle = true
                                             menu.focus()
                                         }
                                     }

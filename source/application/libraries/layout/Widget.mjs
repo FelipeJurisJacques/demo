@@ -2,9 +2,17 @@ export class Widget {
     static #handlers = []
     static #subscriptions = []
 
+    /**
+     * @var {boolean}
+     */
+    #access
+
     #element
+    #subject
     #subjects
 
+    #subjectLeaving
+    #subjectAccessed
     //focus
     //focusin
     // #subjectTap
@@ -97,11 +105,11 @@ export class Widget {
                             this.#element.style[style] = context.style[style] = value
                         }
                         break
-                    case 'onActive':
-                        this.onActive = context[name]
-                        break
                     case 'onBlur':
-                        this.onBlur = context[name]
+                    case 'onActive':
+                    case 'onLeaving':
+                    case 'onAccessed':
+                        this[name] = context[name]
                         break
                     // case 'onLongAction':
                     //     this.#subscribe('pointerup')
@@ -206,7 +214,8 @@ export class Widget {
      * @var {boolean} value
      */
     set toggle(value) {
-        return this.#element.style.display = value ? 'block' : 'none'
+        this.#element.style.display = value ? 'block' : 'none'
+        this.#access = value
     }
 
     /**
@@ -265,6 +274,22 @@ export class Widget {
     /**
      * @param {function} event
      */
+    set onAccessed(event) {
+        this.#subscribe('click')
+        this.#subjectAccessed = event
+    }
+
+    /**
+     * @param {function} event
+     */
+    set onLeaving(event) {
+        this.#subscribe('click')
+        this.#subjectLeaving = event
+    }
+
+    /**
+     * @param {function} event
+     */
     set onBlur(event) {
         if (!this.#subjects) {
             this.#subjects = {}
@@ -282,6 +307,7 @@ export class Widget {
 
     focus(options) {
         this.#element.focus(options)
+        this.#access = true
     }
 
     toString() {
@@ -307,7 +333,58 @@ export class Widget {
     }
 
     static #notify(event) {
-        let element = event.target
+        let element
+        if (event.type === 'click') {
+            for (let statement of this.#handlers) {
+                if (statement.#access) {
+                    if (statement.#subjectAccessed || statement.#subjectLeaving) {
+                        let execute = true
+                        element = event.target
+                        while (element && execute) {
+                            if (element === statement.#element) {
+                                execute = false
+                            } else {
+                                element = element.parentElement
+                            }
+                        }
+                        if (execute) {
+                            statement.#access = false
+                            if (statement.#subjectLeaving) {
+                                statement.#subjectLeaving(event)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        element = event.target
+        while (element) {
+            for (let statement of this.#handlers) {
+                if (
+                    statement.#subjects
+                    && element === statement.#element
+                ) {
+                    switch (event.type) {
+                        case 'focus':
+                        case 'click':
+                        case 'dbclick':
+                            if (!statement.#access) {
+                                if (statement.#subjectAccessed || statement.#subjectLeaving) {
+                                    statement.#access = true
+                                    if (statement.#subjectAccessed) {
+                                        statement.#subjectAccessed(event)
+                                    }
+                                }
+                            }
+                            break
+                        default:
+                            break
+                    }
+                }
+            }
+            element = element.parentElement
+        }
+        element = event.target
         while (element) {
             for (let statement of this.#handlers) {
                 if (
@@ -316,14 +393,19 @@ export class Widget {
                 ) {
                     switch (event.type) {
                         case 'click':
+                            if (statement.#subjectAccessed) {
+                                statement.#subjectAccessed(event)
+                            }
                             if (statement.#subjects.active) {
-                                statement.#subjects.active(event)
+                                statement.#subject = statement.#subjects.active
+                                statement.#subject(event)
                                 return true
                             }
                             switch (event.pointerType) {
                                 case 'mouse':
                                     if (statement.#subjects.click) {
-                                        statement.#subjects.click(event)
+                                        statement.#subject = statement.#subjects.click
+                                        statement.#subject(event)
                                         return true
                                     }
                                     break
@@ -415,7 +497,8 @@ export class Widget {
 
                         default:
                             if (statement.#subjects[event.type]) {
-                                statement.#subjects[event.type](event)
+                                statement.#subject = statement.#subjects[event.type]
+                                statement.#subject(event)
                                 return true
                             }
                             break
