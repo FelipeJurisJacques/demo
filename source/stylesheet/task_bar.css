@@ -29,7 +29,7 @@
     background-attachment: fixed;
 } */
 
-footer.bar {
+footer.task_bar {
     width: 100%;
     height: 30px;
     bottom: 0px;
@@ -38,21 +38,36 @@ footer.bar {
     background-image: url(/source/image/background/taskbar.png);
 }
 
-footer.bar button.start {
+footer.task_bar button.start {
     width: 102px;
     height: 30px;
     background-image: url(/source/image/icon/start_button.png);
 }
 
-footer.bar button.start:hover {
+footer.task_bar button.start:hover {
     background-image: url(/source/image/icon/start_button_hover.png);
 }
 
-footer.bar button.start:active {
+footer.task_bar button.start:active {
     background-image: url(/source/image/icon/start_button_active.png);
 }
 
-footer.bar button {
+footer.task_bar button.tab {
+    width: 134px;
+    height: 30px;
+    text-align: left;
+    background-image: url(/source/image/icon/windows_button_tab.png);
+}
+
+footer.task_bar button.tab:hover {
+    background-image: url(/source/image/icon/windows_button_tab_hover.png);
+}
+
+footer.task_bar button.tab.active {
+    background-image: url(/source/image/icon/windows_button_tab_active.png);
+}
+
+footer.task_bar button {
     border: 0;
     border-color: transparent;
     background-color: transparent;

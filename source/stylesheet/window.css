@@ -1,0 +1,61 @@
+div.window {
+    width: 100%;
+    height: calc(100% - 30px);
+    position: absolute;
+}
+
+div.window div.tool_bar {
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 30px;
+    position: absolute;
+    background-image: url(/source/image/background/window_tool_bar.png);
+}
+
+div.window div.tool_bar button.close {
+    background-image: url(/source/image/icon/window_button_close.png);
+}
+
+div.window div.tool_bar button.close:hover {
+    background-image: url(/source/image/icon/window_button_close_hover.png);
+}
+
+div.window div.tool_bar button.max.expanded {
+    background-image: url(/source/image/icon/window_button_max_expanded.png);
+}
+
+div.window div.tool_bar button {
+    top: 5px;
+    width: 21px;
+    height: 21px;
+    border: 0;
+    position: absolute;
+    border-color: transparent;
+    background-color: transparent;
+}
+
+div.window div.tool_bar button.max {
+    right: 55px;
+}
+
+div.window div.tool_bar button.close {
+    right: 5px;
+}
+
+div.window div.content {
+    top: 30px;
+    width: calc(100% - 4px);
+    height: calc(100% - 32px);
+    position: absolute;
+    /* background-color: white; */
+    border-left-style: solid;
+    border-left-width: 2px;
+    border-right-style: solid;
+    border-right-width: 2px;
+    border-bottom-style: solid;
+    border-bottom-width: 2px;
+    border-left-color:#0831D9;
+    border-right-color:#0831D9;
+    border-bottom-color:#0831D9;
+}

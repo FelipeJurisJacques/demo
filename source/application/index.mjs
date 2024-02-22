@@ -1,7 +1,7 @@
-import { Main } from "./views/Main.mjs"
 import { ServiceWorker } from "./libraries/sw/ServiceWorker.mjs"
+import { IndexController } from "./controller/IndexController.mjs"
 
-const app = new Main()
+const controller = new IndexController()
 
 const url = new URL(`${location.origin}/source/application/worker/ServiceWorker.js`)
 ServiceWorker.register(url)

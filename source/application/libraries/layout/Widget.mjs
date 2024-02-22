@@ -40,6 +40,7 @@ export class Widget {
 
     constructor(context) {
         this.#element = context.tag
+        this.#element.widget = this
         if (this.#element) {
             for (let name in context) {
                 switch (name) {
@@ -210,6 +211,19 @@ export class Widget {
         }
     }
 
+    deconstruct() {
+        if (this.#element) {
+            delete this.#element.widget
+            this.#element.remove()
+        }
+        this.#access = null
+        this.#element = null
+        this.#subject = null
+        this.#subjects = null
+        this.#subjectLeaving = null
+        this.#subjectAccessed = null
+    }
+
     /**
      * @var {boolean} value
      */
@@ -237,29 +251,38 @@ export class Widget {
             child.remove()
         }
         if (context instanceof Widget) {
-            this.#element.appendChild(context.#element)
+            this.#element.append(context.#element)
         } else if (context instanceof URL) {
             fetch(context).then(async response => {
                 this.#element.innerHTML = await response.text()
             })
         } else {
-            this.#element.appendChild(context)
+            this.#element.append(context)
         }
     }
 
-    /**
-     * @param {object[]} list
-     */
+    get children() {
+        return this.#element.children
+    }
+
     set children(list) {
         for (let child of this.#element.children) {
             child.remove()
         }
         for (let child of list) {
             if (child instanceof Widget) {
-                this.#element.appendChild(child.#element)
+                this.#element.append(child.#element)
             } else {
-                this.#element.appendChild(child)
+                this.#element.append(child)
             }
+        }
+    }
+
+    set append(child) {
+        if (child instanceof Widget) {
+            this.#element.append(child.#element)
+        } else {
+            this.#element.append(child)
         }
     }
 
@@ -308,6 +331,19 @@ export class Widget {
     focus(options) {
         this.#element.focus(options)
         this.#access = true
+    }
+
+    /**
+     * @param {string} search
+     * @returns {Widget}
+     */
+    query(search) {
+        const result = this.#element.querySelector(search)
+        return result.widget ? result.widget : result.widget
+    }
+
+    remove() {
+        this.deconstruct()
     }
 
     toString() {

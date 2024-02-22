@@ -1,6 +1,6 @@
 import { Body } from "./Body.mjs";
-import { Widget } from "./Widget.mjs";
 import { Head } from "./head.mjs";
+import { Widget } from "./Widget.mjs";
 
 export class Html extends Widget {
 
