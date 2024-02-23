@@ -1,5 +1,6 @@
 import { P } from "../libraries/layout/P.mjs";
 import { Div } from "../libraries/layout/Div.mjs";
+import { Tab } from "../widget/Tab.mjs";
 import { Button } from "../libraries/layout/Button.mjs";
 
 export class Window extends Div {
@@ -44,19 +45,8 @@ export class Window extends Div {
                 }),
             ],
         })
-        this.#tab = new Button({
-            class: [
-                'tab',
-                'active',
-            ],
-            content: 'aba aberta',
-            onActive: () => {
-                this.toggle = true
-                this.#tab.class = [
-                    'tab',
-                    'active',
-                ]
-            }
+        this.#tab = new Tab({
+            window: this,
         })
         context.taskBar.append = this.#tab
     }

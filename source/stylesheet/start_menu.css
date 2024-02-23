@@ -3,6 +3,7 @@ div.start_menu {
     bottom: 30px;
     height: 480px;
     display: none;
+    z-index: 10;
     position: absolute;
     background-image: url(/source/image/background/start_menu.png);
 }

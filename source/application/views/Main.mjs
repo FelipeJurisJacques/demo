@@ -1,17 +1,9 @@
-import { Body } from "../libraries/layout/Body.mjs";
 import { Link } from "../libraries/layout/Link.mjs";
 import { Head } from "../libraries/layout/head.mjs";
 import { Html } from "../libraries/layout/Html.mjs";
 
 export class Main extends Html {
     constructor(context) {
-        const list = [
-            context.bar,
-            context.menu,
-        ]
-        for (let window of context.windows) {
-            list.push(window)
-        }
         super({
             children: [
                 new Head({
@@ -42,9 +34,7 @@ export class Main extends Html {
                         }),
                     ],
                 }),
-                new Body({
-                    children: list,
-                }),
+                context.desktop,
             ],
         })
     }

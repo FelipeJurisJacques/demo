@@ -4,7 +4,7 @@ import { Div } from "../libraries/layout/Div.mjs"
 import { Button } from "../libraries/layout/Button.mjs"
 
 export class StartMenu extends Div {
-    constructor() {
+    constructor(context) {
         super({
             class: 'start_menu',
             onLeaving: () => {
@@ -22,6 +22,7 @@ export class StartMenu extends Div {
                                 content: 'Explorador de arquivos',
                                 onActive: () => {
                                     this.toggle = false
+                                    context.controller.explorer()
                                 },
                             }),
                         }),
