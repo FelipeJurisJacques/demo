@@ -9,8 +9,30 @@ div.window div.tool_bar {
     left: 0px;
     width: 100%;
     height: 30px;
+    display: grid;
     position: absolute;
     background-image: url(/source/image/background/window_tool_bar.png);
+    grid-template-rows: max-content;
+    grid-template-columns: 25px auto 25px 25px 25px;
+}
+
+div.window div.tool_bar p {
+    font: 12px/100% Arial, Helvetica, sans-serif;
+    color: #FFF;
+    margin: 0px;
+    padding: 0px;
+    font-size: 12px;
+    line-height: 250%;
+    margin-left: 5px;
+    text-shadow: 1px 1px 1px #000;
+}
+
+div.window div.tool_bar button.min {
+    background-image: url(/source/image/icon/windows_button_min.png);
+}
+
+div.window div.tool_bar button.min:hover {
+    background-image: url(/source/image/icon/windows_button_min_hover.png);
 }
 
 div.window div.tool_bar button.close {
@@ -21,34 +43,37 @@ div.window div.tool_bar button.close:hover {
     background-image: url(/source/image/icon/window_button_close_hover.png);
 }
 
-div.window div.tool_bar button.max.expanded {
-    background-image: url(/source/image/icon/window_button_max_expanded.png);
+div.window.maximized div.tool_bar button.max {
+    background-image: url(/source/image/icon/window_button_max_maximized.png);
+}
+
+div.window.minimized div.tool_bar button.max {
+    background-image: url(/source/image/icon/window_button_max_minimized.png);
 }
 
 div.window div.tool_bar button {
-    top: 5px;
-    width: 21px;
-    height: 21px;
-    border: 0;
-    position: absolute;
+    width: 25px;
+    height: 25px;
+    margin-top: 4px;
     border-color: transparent;
     background-color: transparent;
-}
-
-div.window div.tool_bar button.max {
-    right: 55px;
-}
-
-div.window div.tool_bar button.close {
-    right: 5px;
+    background-repeat: no-repeat;
 }
 
 div.window div.content {
     top: 30px;
-    width: calc(100% - 4px);
-    height: calc(100% - 32px);
     position: absolute;
     /* background-color: white; */
+}
+
+div.window.maximized div.content {
+    width: 100%;
+    height: calc(100% - 30px);
+}
+
+div.window.minimized div.content {
+    width: calc(100% - 4px);
+    height: calc(100% - 32px);
     border-left-style: solid;
     border-left-width: 2px;
     border-right-style: solid;

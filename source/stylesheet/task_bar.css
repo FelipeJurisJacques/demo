@@ -68,7 +68,9 @@ footer.task_bar button.tab.active {
 }
 
 footer.task_bar button {
+    font: 12px/100% Arial, Helvetica, sans-serif;
     border: 0;
+    font-size: 11px;
     border-color: transparent;
     background-color: transparent;
 }

@@ -13,14 +13,6 @@ body {
     color: white;
 }
 
-.expanded {
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    position: absolute;
-}
-
 button:hover {
     cursor: pointer;
 }

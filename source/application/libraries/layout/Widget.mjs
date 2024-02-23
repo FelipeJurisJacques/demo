@@ -54,11 +54,7 @@ export class Widget {
                         this.#element[name] = context[name]
                         break
                     case 'class':
-                        if (Array.isArray(context.class)) {
-                            this.#element.className = context.class.join(' ')
-                        } else {
-                            this.#element.className = context.class
-                        }
+                        this[name] = context[name]
                         break
                     case 'controls':
                     case 'multiple':
@@ -222,6 +218,14 @@ export class Widget {
         this.#subjects = null
         this.#subjectLeaving = null
         this.#subjectAccessed = null
+    }
+
+    set class(value) {
+        if (Array.isArray(value)) {
+            this.#element.className = value.join(' ')
+        } else {
+            this.#element.className = value
+        }
     }
 
     /**

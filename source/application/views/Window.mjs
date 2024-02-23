@@ -1,3 +1,4 @@
+import { P } from "../libraries/layout/P.mjs";
 import { Div } from "../libraries/layout/Div.mjs";
 import { Button } from "../libraries/layout/Button.mjs";
 
@@ -6,22 +7,35 @@ export class Window extends Div {
 
     constructor(context) {
         super({
-            class: 'window',
+            class: [
+                'window',
+                'maximized',
+            ],
             children: [
                 new Div({
                     class: 'tool_bar',
                     children: [
                         new Button({
+                            class: 'max',
+                        }),
+                        new P({
+                            content: 'nova janela',
+                        }),
+                        new Button({
+                            class: 'min',
+                            onActive: () => {
+                                this.toggle = false
+                                this.#tab.class = 'tab'
+                            }
+                        }),
+                        new Button({
+                            class: 'max',
+                        }),
+                        new Button({
                             class: 'close',
                             onActive: () => {
                                 this.remove()
                             },
-                        }),
-                        new Button({
-                            class: [
-                                'max',
-                                'expanded',
-                            ],
                         }),
                     ],
                 }),
@@ -36,6 +50,13 @@ export class Window extends Div {
                 'active',
             ],
             content: 'aba aberta',
+            onActive: () => {
+                this.toggle = true
+                this.#tab.class = [
+                    'tab',
+                    'active',
+                ]
+            }
         })
         context.taskBar.append = this.#tab
     }
