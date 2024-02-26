@@ -39,7 +39,11 @@ export class Widget {
     // #subjectLostPointerCapture
 
     constructor(context) {
-        this.#element = context.tag
+        if (typeof context.tag === 'string') {
+            this.#element = window.document.createElement(context.tag)
+        } else {
+            this.#element = context.tag
+        }
         this.#element.widget = this
         if (this.#element) {
             for (let name in context) {
@@ -220,6 +224,18 @@ export class Widget {
         this.#subjectAccessed = null
     }
 
+    get id() {
+        return this.#element.id
+    }
+
+    set id(value) {
+        this.#element.id = value
+    }
+
+    get class(){
+        return this.#element.classList
+    }
+
     set class(value) {
         if (Array.isArray(value)) {
             this.#element.className = value.join(' ')
@@ -266,7 +282,13 @@ export class Widget {
     }
 
     get children() {
-        return this.#element.children
+        const list = []
+        for (let child of this.#element.children) {
+            if (child.widget) {
+                list.push(child.widget)
+            }
+        }
+        return list
     }
 
     set children(list) {

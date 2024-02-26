@@ -1,38 +1,42 @@
-import { P } from "../libraries/layout/P.mjs";
-import { Div } from "../libraries/layout/Div.mjs";
 import { Tab } from "../widget/Tab.mjs";
-import { Button } from "../libraries/layout/Button.mjs";
+import { Widget } from "../libraries/layout/Widget.mjs";
 
-export class Window extends Div {
+export class Window extends Widget {
     #tab
 
     constructor(context) {
         super({
+            tag: 'div',
             class: [
                 'window',
                 'maximized',
             ],
             children: [
-                new Div({
+                new Widget({
+                    tag: 'div',
                     class: 'tool_bar',
                     children: [
-                        new Button({
+                        new Widget({
+                            tag: 'button',
                             class: 'max',
                         }),
-                        new P({
+                        new Widget({
+                            tag: 'p',
                             content: 'nova janela',
                         }),
-                        new Button({
+                        new Widget({
+                            tag: 'button',
                             class: 'min',
                             onActive: () => {
-                                this.toggle = false
-                                this.#tab.class = 'tab'
+                                this.#tab.minimize()
                             }
                         }),
-                        new Button({
+                        new Widget({
+                            tag: 'button',
                             class: 'max',
                         }),
-                        new Button({
+                        new Widget({
+                            tag: 'button',
                             class: 'close',
                             onActive: () => {
                                 this.remove()
@@ -40,15 +44,16 @@ export class Window extends Div {
                         }),
                     ],
                 }),
-                new Div({
+                new Widget({
+                    tag: 'div',
                     class: 'content',
                 }),
             ],
         })
         this.#tab = new Tab({
+            bar: context.bar,
             window: this,
         })
-        context.taskBar.append = this.#tab
     }
 
     deconstruct() {
