@@ -1,11 +1,9 @@
-import { Li } from "../libraries/layout/Li.mjs"
-import { Ul } from "../libraries/layout/Ul.mjs"
-import { Div } from "../libraries/layout/Div.mjs"
-import { Button } from "../libraries/layout/Button.mjs"
+import { Widget } from "../libraries/layout/Widget.mjs"
 
-export class StartMenu extends Div {
+export class StartMenu extends Widget {
     constructor(context) {
         super({
+            tag: 'div',
             class: 'start_menu',
             onLeaving: () => {
                 setTimeout(() => {
@@ -13,10 +11,13 @@ export class StartMenu extends Div {
                 }, 50)
             },
             children: [
-                new Ul({
+                new Widget({
+                    tag: 'ul',
                     children: [
-                        new Li({
-                            child: new Button({
+                        new Widget({
+                            tag: 'li',
+                            child: new Widget({
+                                tag: 'button',
                                 class: 'explorer',
                                 title: 'Explorer',
                                 content: 'Explorador de arquivos',
