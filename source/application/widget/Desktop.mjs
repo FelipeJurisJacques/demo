@@ -6,9 +6,9 @@ export class Desktop extends Body {
             context.menu,
             context.taskBar,
         ]
-        for (let window of context.windows) {
-            list.push(window)
-        }
+        // for (let window of context.windows) {
+        //     list.push(window)
+        // }
         super({
             children: list,
         })

@@ -50,6 +50,7 @@ export class Window extends Widget {
                 }),
             ],
         })
+        context.desktop.append = this
         this.#tab = new Tab({
             bar: context.bar,
             window: this,
