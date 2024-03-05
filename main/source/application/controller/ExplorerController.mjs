@@ -1,3 +1,5 @@
+import { Window } from "./Window.mjs";
+
 export class ExplorerController {
     #window
     constructor(context) {

@@ -11,7 +11,7 @@ div.window div.tool_bar {
     height: 30px;
     display: grid;
     position: absolute;
-    background-image: url(/source/image/background/window_tool_bar.png);
+    background-image: url(../../source/image/background/window_tool_bar.png);
     grid-template-rows: max-content;
     grid-template-columns: 25px auto 25px 25px 25px;
 }
@@ -28,27 +28,27 @@ div.window div.tool_bar p {
 }
 
 div.window div.tool_bar button.min {
-    background-image: url(/source/image/icon/windows_button_min.png);
+    background-image: url(../../source/image/icon/windows_button_min.png);
 }
 
 div.window div.tool_bar button.min:hover {
-    background-image: url(/source/image/icon/windows_button_min_hover.png);
+    background-image: url(../../source/image/icon/windows_button_min_hover.png);
 }
 
 div.window div.tool_bar button.close {
-    background-image: url(/source/image/icon/window_button_close.png);
+    background-image: url(../../source/image/icon/window_button_close.png);
 }
 
 div.window div.tool_bar button.close:hover {
-    background-image: url(/source/image/icon/window_button_close_hover.png);
+    background-image: url(../../source/image/icon/window_button_close_hover.png);
 }
 
 div.window.maximized div.tool_bar button.max {
-    background-image: url(/source/image/icon/window_button_max_maximized.png);
+    background-image: url(../../source/image/icon/window_button_max_maximized.png);
 }
 
 div.window.minimized div.tool_bar button.max {
-    background-image: url(/source/image/icon/window_button_max_minimized.png);
+    background-image: url(../../source/image/icon/window_button_max_minimized.png);
 }
 
 div.window div.tool_bar button {

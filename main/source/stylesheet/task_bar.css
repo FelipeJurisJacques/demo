@@ -35,36 +35,36 @@ footer.task_bar {
     bottom: 0px;
     display: flex;
     position: absolute;
-    background-image: url(/source/image/background/taskbar.png);
+    background-image: url(../../source/image/background/taskbar.png);
 }
 
 footer.task_bar button.start {
     width: 102px;
     height: 30px;
-    background-image: url(/source/image/icon/start_button.png);
+    background-image: url(../../source/image/icon/start_button.png);
 }
 
 footer.task_bar button.start:hover {
-    background-image: url(/source/image/icon/start_button_hover.png);
+    background-image: url(../../source/image/icon/start_button_hover.png);
 }
 
 footer.task_bar button.start:active {
-    background-image: url(/source/image/icon/start_button_active.png);
+    background-image: url(../../source/image/icon/start_button_active.png);
 }
 
 footer.task_bar button.tab {
     width: 134px;
     height: 30px;
     text-align: left;
-    background-image: url(/source/image/icon/windows_button_tab.png);
+    background-image: url(../../source/image/icon/windows_button_tab.png);
 }
 
 footer.task_bar button.tab:hover {
-    background-image: url(/source/image/icon/windows_button_tab_hover.png);
+    background-image: url(../../source/image/icon/windows_button_tab_hover.png);
 }
 
 footer.task_bar button.tab.active {
-    background-image: url(/source/image/icon/windows_button_tab_active.png);
+    background-image: url(../../source/image/icon/windows_button_tab_active.png);
 }
 
 footer.task_bar button {

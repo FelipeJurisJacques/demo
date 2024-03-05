@@ -5,7 +5,7 @@ div.start_menu {
     display: none;
     z-index: 10;
     position: absolute;
-    background-image: url(/source/image/background/start_menu.png);
+    background-image: url(../../source/image/background/start_menu.png);
 }
 
 div.start_menu ul {
@@ -25,6 +25,6 @@ div.start_menu button.explorer {
     border-color: transparent;
     background-size: 32px 32px;
     background-color: transparent;
-    background-image: url(/source/image/icon/folder.png);
+    background-image: url(../../source/image/icon/folder.png);
     background-repeat: no-repeat;
 }
