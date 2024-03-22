@@ -1,60 +1,76 @@
-import { Widget } from "../../../../vendors/application/libraries/layout/Widget.mjs";
-
 export class Notepad {
     constructor(document) {
+        document.body.style = {
+            grid: {
+                columns: 1,
+                template: {
+                    rows: [
+                        '30px',
+                        'auto',
+                        '30px',
+                    ],
+                }
+            }
+        }
         document.body.children = [
-            new Widget({
+            {
                 tag: 'header',
-                child: new Widget({
+                child: {
                     tag: 'ul',
+                    style: {
+                        orientation: 0,
+                    },
                     children: [
-                        new Widget({
+                        {
                             tag: 'li',
-                            child: new Widget({
+                            child: {
                                 tag: 'button',
                                 content: 'File',
-                            }),
-                        }),
-                        new Widget({
+                            },
+                        },
+                        {
                             tag: 'li',
-                            child: new Widget({
+                            child: {
                                 tag: 'button',
                                 content: 'Edit',
-                            }),
-                        }),
-                        new Widget({
+                            },
+                        },
+                        {
                             tag: 'li',
-                            child: new Widget({
+                            child: {
                                 tag: 'button',
                                 content: 'Format',
-                            }),
-                        }),
+                            },
+                        },
                     ],
-                }),
-            }),
-            new Widget({
-                tag: 'p',
-            }),
-            new Widget({
+                },
+            },
+            {
+                tag: 'textarea',
+            },
+            {
                 tag: 'footer',
-                child: new Widget({
+                child: {
                     tag: 'ul',
+                    style: {
+                        orientation: 0,
+                    },
                     children: [
-                        new Widget({
+                        {
                             tag: 'li',
                             content: 'Ln 1',
-                        }),
-                        new Widget({
+                        },
+                        {
                             tag: 'li',
                             content: 'Col 1',
-                        }),
-                        new Widget({
+                        },
+                        {
                             tag: 'li',
                             content: 'Len 1',
-                        }),
+                        },
                     ],
-                }),
-            }),
+                },
+            },
         ]
     }
 }
