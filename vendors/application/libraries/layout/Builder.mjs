@@ -1,5 +1,5 @@
-import { Events } from "./Events.mjs"
 import { Style } from "./Style.mjs"
+import { Events } from "./Events.mjs"
 import { Widget } from "./Widget.mjs"
 
 export class Builder {
@@ -39,7 +39,12 @@ export class Builder {
         }
     }
 
+    /**
+     * @param {Object} context 
+     * @returns {HTMLElement}
+     */
     static build(context) {
+        let events = false
         const element = typeof context.tag === 'string' ? window.document.createElement(context.tag) : context.tag
         for (let name in context) {
             switch (name) {
@@ -57,12 +62,7 @@ export class Builder {
                     this.#appendChild(element, context.child)
                     break
                 case 'class':
-                    if (typeof context.class === 'string') {
-                        element.className = context.class
-                    }
-                    if (Array.isArray(context.class)) {
-                        element.className = context.join(' ')
-                    }
+                    element.className = typeof context.class === 'string' ? context.class : context.join(' ')
                     break
                 case 'style':
                     Style.build(element, context.style)
@@ -84,107 +84,17 @@ export class Builder {
                 case 'content':
                     element.innerText = context.content
                     break
-                case 'onBlur':
-                case 'onActive':
-                case 'onLeaving':
-                case 'onAccessed':
-                    // this[name] = context[name]
-                    break
-                // case 'onLongAction':
-                //     element.subscribe('pointerup')
-                //     element.subscribe('pointerdown')
-                //     element.subjectLongAction = widget[name]
-                //     break
-                // case 'onDoubleAction':
-                //     element.subscribe('click')
-                //     element.subjectDoubleAction = widget[name]
-                //     break
-                // case 'onTap':
-                //     element.subscribe('click')
-                //     element.subjectTap = widget[name]
-                //     break
-                // case 'onLongTap':
-                //     element.subscribe('pointerup')
-                //     element.subscribe('pointerdown')
-                //     element.subjectLongTap = widget[name]
-                //     break
-                // case 'onDoubleTap':
-                //     element.subscribe('click')
-                //     element.subjectDoubleClick = widget[name]
-                //     break
-                // case 'onClick':
-                //     element.subscribe('click')
-                //     element.subjectClick = widget[name]
-                //     break
-                // case 'onLongClick':
-                //     element.subscribe('pointerup')
-                //     element.subscribe('pointerdown')
-                //     element.subjectLongClick = widget[name]
-                //     break
-                // case 'onDoubleClick':
-                //     element.subscribe('click')
-                //     element.subjectDoubleClick = widget[name]
-                //     break
-                // case 'onPointerUp':
-                //     element.subscribe('pointerup')
-                //     element.subjectPointerUp = widget[name]
-                //     break
-                // case 'onPointerOut':
-                //     element.subscribe('pointerout')
-                //     element.subjectPointerOut = widget[name]
-                //     break
-                // case 'onPointerOver':
-                //     element.subscribe('pointerover')
-                //     element.subjectPointerOver = widget[name]
-                //     break
-                // case 'onPointerDown':
-                //     element.subscribe('pointerdown')
-                //     element.subjectPointerDown = widget[name]
-                //     break
-                // case 'onPointerMove':
-                //     element.subscribe('pointermove')
-                //     element.subjectPointerMove = widget[name]
-                //     break
-                // case 'onPointerEnter':
-                //     element.subscribe('pointerenter')
-                //     element.subjectPointerEnter = widget[name]
-                //     break
-                // case 'onPointerLeave':
-                //     element.subscribe('pointerleave')
-                //     element.subjectPointerLeave = widget[name]
-                //     break
-                // case 'onPointerCancel':
-                //     element.subscribe('pointercancel')
-                //     element.subjectPointerCancel = widget[name]
-                //     break
-                // case 'gotpointercapture':
-                //     element.subscribe('gotpointercapture')
-                //     element.subjectgotpointercapture = widget[name]
-                //     break
-                // case 'lostpointercapture':
-                //     element.subscribe('lostpointercapture')
-                //     element.subjectlostpointercapture = widget[name]
-                //     break
-
-                // ARRASTAR
-                // case 'onDragOver':
-                //     element.subscribe('dragover')
-                //     element.subjectDragOver = widget[name]
-                //     break
-                // case 'onDrop':
-                //     element.subscribe('drop')
-                //     element.subjectDrop = widget[name]
-                //     break
-                // case 'onDropFile':
-                //     element.subscribe('drop')
-                //     element.subscribe('dragover')
-                //     element.onDropFile = widget[name]
-                //     break
-
                 default:
-                    element.setAttribute(name, context[name])
+                    if (name.substring(0, 2) === 'on') {
+                        events = true
+                    } else {
+                        element.setAttribute(name, context[name])
+                    }
                     break
             }
+        }
+        if (events) {
+            Events.build(element, context)
         }
         return element
     }

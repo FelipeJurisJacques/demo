@@ -1,7 +1,19 @@
+import { Index } from "./views/Index.mjs"
+import { Frame } from "../../../vendors/application/libraries/layout/Frame.mjs"
+import { Application } from "../../../vendors/application/libraries/base/Application.mjs"
 import { ServiceWorker } from "./libraries/sw/ServiceWorker.mjs"
-import { IndexController } from "./controller/IndexController.mjs"
 
-const controller = new IndexController()
+class Main extends Application {
+    #document
+
+    main() {
+        this.#document = new Frame()
+        const view = new Index(this.#document)
+    }
+}
+
+const application = new Main()
+application.main()
 
 const url = new URL(`${location.origin}/source/application/worker/ServiceWorker.js`)
 ServiceWorker.register(url)

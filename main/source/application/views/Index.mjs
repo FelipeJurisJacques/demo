@@ -1,11 +1,11 @@
 import { Bar } from "../widget/Bar.mjs";
-import { Main } from "../views/Main.mjs";
+import { Main } from "./Main.mjs";
 import { Desktop } from "../widget/Desktop.mjs";
 import { TaskBar } from "../widget/TaskBar.mjs";
 import { StartMenu } from "../widget/StartMenu.mjs";
-import { ExplorerController } from "./ExplorerController.mjs";
+import { ExplorerController } from "../controller/ExplorerController.mjs";
 
-export class IndexController {
+export class Index {
     #bar
     #menu
     #desktop
